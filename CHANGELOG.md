@@ -18,6 +18,8 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+## [0.1.0]
+
 ### Added
 
 - Added `use_skill` tool to load skill content into context
@@ -32,4 +34,5 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
 
-[unreleased]: https://github.com/joshuadavidthomas/opencode-agent-skills/commits/main
+[unreleased]: https://github.com/joshuadavidthomas/opencode-agent-skills/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.1.0
