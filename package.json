@@ -1,8 +1,25 @@
 {
   "name": "opencode-agent-skills",
   "version": "0.1.0",
+  "description": "A dynamic skills plugin for OpenCode that provides tools for loading and using reusable AI agent skills.",
+  "author": "Josh Thomas <josh@joshthomas.dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joshuadavidthomas/opencode-agent-skills.git"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "skills",
+    "agent",
+    "ai"
+  ],
   "main": "src/plugin.ts",
   "type": "module",
+  "files": [
+    "src"
+  ],
   "scripts": {
     "test": "bun test",
     "typecheck": "tsc --noEmit"
