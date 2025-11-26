@@ -20,7 +20,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ### Added
 
-- Added support for superpower mode
+- Added support for superpowers mode
 - Added release attestations
 
 ## [0.1.0]
