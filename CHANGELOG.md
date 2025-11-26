@@ -18,6 +18,11 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Added
+
+- Added support for superpowers mode
+- Added release attestations
+
 ## [0.1.0]
 
 ### Added

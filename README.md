@@ -73,6 +73,27 @@ This means skills become part of the persistent conversation context and remain 
 
 On session start, the plugin automatically injects a list of all discovered skills wrapped in `<available-skills>` tags. This allows the agent to know what skills are available without needing to call `find_skills` first.
 
+### Superpowers Mode (optional)
+
+To get the strict Superpowers prompt, install the real Superpowers project (follow [their instructions](https://github.com/obra/superpowers)). We automatically pick up the `using-superpowers` skill from either of its supported homes:
+
+- Installed as a Claude Code plugin (skills live under `.claude/plugins/…`)
+- Installed as the Superpowers OpenCode plugin (skills live under `.opencode/skills/…`)
+
+Once Superpowers is installed, enable superpowers mode via environment variable:
+
+```bash
+OPENCODE_AGENT_SKILLS_SUPERPOWERS_MODE=true opencode
+```
+
+Or export it in your shell profile for persistent use:
+
+```bash
+export OPENCODE_AGENT_SKILLS_SUPERPOWERS_MODE=true
+```
+
+The plugin will inject the full prompt when a session starts and a compact reminder after compaction.
+
 ### Compaction Resilience
 
 The plugin listens for `session.compacted` events and re-injects the available skills list. Combined with the `synthetic: true` flag on loaded skills, this ensures the agent maintains access to skills throughout long sessions.
