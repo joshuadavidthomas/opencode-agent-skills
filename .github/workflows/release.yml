@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v6
 
@@ -25,6 +27,11 @@ jobs:
 
       - name: Build package
         run: bun pm pack
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: "./*.tgz"
 
       - name: Upload release assets to GitHub
         env:
