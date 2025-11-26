@@ -414,6 +414,52 @@ async function discoverMarketplaceSkills(
 }
 
 /**
+ * Discover skills from Claude Code's plugin cache directory.
+ * Plugins are cached at ~/.claude/plugins/cache/<plugin-name>/skills/<skill-name>/SKILL.md
+ */
+async function discoverPluginCacheSkills(label: SkillLabel): Promise<Array<{ skillPath: string; relativePath: string; label: SkillLabel }>> {
+  const results: Array<{ skillPath: string; relativePath: string; label: SkillLabel }> = [];
+  const cacheDir = path.join(homedir(), '.claude', 'plugins', 'cache');
+
+  try {
+    const plugins = await fs.readdir(cacheDir, { withFileTypes: true });
+
+    for (const plugin of plugins) {
+      if (!plugin.isDirectory()) continue;
+
+      const skillsDir = path.join(cacheDir, plugin.name, 'skills');
+
+      try {
+        const skillDirs = await fs.readdir(skillsDir, { withFileTypes: true });
+
+        for (const skillDir of skillDirs) {
+          if (!skillDir.isDirectory()) continue;
+
+          const skillMdPath = path.join(skillsDir, skillDir.name, 'SKILL.md');
+
+          try {
+            await fs.stat(skillMdPath);
+            results.push({
+              skillPath: skillMdPath,
+              relativePath: skillDir.name,
+              label
+            });
+          } catch {
+            // SKILL.md doesn't exist
+          }
+        }
+      } catch {
+        // No skills directory in this plugin
+      }
+    }
+  } catch {
+    // Cache directory doesn't exist
+  }
+
+  return results;
+}
+
+/**
  * Discover all skills from all locations.
  *
  * Discovery order (first found wins, OpenCode trumps Claude at each level):
@@ -421,7 +467,8 @@ async function discoverMarketplaceSkills(
  * 2. .claude/skills/                   (project - Claude)
  * 3. ~/.config/opencode/skills/        (user - OpenCode)
  * 4. ~/.claude/skills/                 (user - Claude)
- * 5. ~/.claude/plugins/marketplaces/   (installed plugins)
+ * 5. ~/.claude/plugins/cache/          (cached plugin skills)
+ * 6. ~/.claude/plugins/marketplaces/   (installed plugins)
  *
  * No shadowing - unique names only. First match wins, duplicates are warned.
  */
@@ -469,6 +516,23 @@ async function discoverAllSkills(directory: string): Promise<Map<string, SkillMe
     }
   }
 
+  // Process plugin cache skills
+  const cacheSkills = await discoverPluginCacheSkills('claude-plugins');
+
+  for (const { skillPath, relativePath, label } of cacheSkills) {
+    const skill = await parseSkillFile(skillPath, relativePath, label);
+    if (!skill) continue;
+
+    const existing = skillsByName.get(skill.name);
+    if (existing) {
+      // Silently skip duplicates - first found wins
+      continue;
+    }
+
+    skillsByName.set(skill.name, skill);
+  }
+
+  // Process marketplace skills
   const marketplaceSkills = await discoverMarketplaceSkills('claude-plugins');
 
   for (const { skillPath, relativePath, label } of marketplaceSkills) {
@@ -526,6 +590,66 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
   const allSkills = Array.from(skillsByName.values());
 
   const injectedSessions = new Set<string>();
+  const usingSuperpowersSkill = skillsByName.get('using-superpowers');
+
+  // Check env var for superpowers mode
+  const superpowersModeEnabled = process.env.OPENCODE_AGENT_SKILLS_SUPERPOWERS_MODE === 'true';
+
+  const toolMappingFull = `**Tool Mapping for OpenCode:**
+- \`TodoWrite\` → \`todowrite\`
+- \`Task\` tool with subagents → Use the \`task\` tool with \`subagent_type\`
+- \`Skill\` tool → \`use_skill\`
+- \`Read\`, \`Write\`, \`Edit\`, \`Bash\`, \`Glob\`, \`Grep\`, \`WebFetch\` → Use the native lowercase OpenCode tools`;
+
+  const toolMappingCompact = '**Tool Mapping:** TodoWrite→todowrite, Task→task(@subagent), Skill→use_skill, Read/Write/Edit/Bash→native tools';
+
+  const skillsNamespaceFull = `**Skill namespace priority:**
+1. Project: \`project:skill-name\`
+2. Claude project: \`claude-project:skill-name\`
+3. User: \`skill-name\`
+4. Claude user: \`claude-user:skill-name\`
+5. Marketplace: \`claude-plugins:skill-name\`
+
+The first discovered match wins.`;
+
+  const skillsNamespaceCompact = '**Skill priority:** project → claude-project → user → claude-user → claude-plugins (first match wins).';
+
+  const buildSuperpowersBootstrap = (compact: boolean): string | null => {
+    if (!usingSuperpowersSkill) return null;
+
+    const mapping = compact ? toolMappingCompact : toolMappingFull;
+    const namespace = compact ? skillsNamespaceCompact : skillsNamespaceFull;
+
+    return `<EXTREMELY_IMPORTANT>
+You have superpowers.
+
+**IMPORTANT: The using-superpowers skill content is included below. It is ALREADY LOADED - do not call use_skill for it again. Use use_skill only for OTHER skills.**
+
+${usingSuperpowersSkill.content}
+
+${mapping}
+
+${namespace}
+</EXTREMELY_IMPORTANT>`;
+  };
+
+
+
+
+  const maybeInjectSuperpowersBootstrap = async (
+    sessionID: string | undefined,
+    reason: 'initial' | 'compaction'
+  ) => {
+    if (!sessionID) return;
+    if (!superpowersModeEnabled) return;
+    if (!usingSuperpowersSkill) return;
+
+    const compact = reason === 'compaction';
+    const content = buildSuperpowersBootstrap(compact);
+    if (!content) return;
+
+    await injectSyntheticContent(client, sessionID, content);
+  };
 
   // Tool translation guide for skills written for Claude Code
   const toolTranslation = `<tool-translation>
@@ -562,6 +686,7 @@ This skill may reference Claude Code tools. Use OpenCode equivalents:
       }
 
       injectedSessions.add(sessionID);
+      await maybeInjectSuperpowersBootstrap(sessionID, 'initial');
       await injectSkillsList(client, sessionID, allSkills);
     },
 
@@ -569,6 +694,7 @@ This skill may reference Claude Code tools. Use OpenCode equivalents:
       // Re-inject skills list after context compaction
       if (event.type === 'session.compacted') {
         const sessionID = event.properties.sessionID;
+        await maybeInjectSuperpowersBootstrap(sessionID, 'compaction');
         await injectSkillsList(client, sessionID, allSkills);
       }
     },
