@@ -191,6 +191,38 @@ ${skillsList}
 }
 
 /**
+ * Recursively list all files in a directory, returning relative paths.
+ * Excludes SKILL.md since it's already loaded as the main content.
+ */
+async function listSkillFiles(skillPath: string, maxDepth: number = 3): Promise<string[]> {
+  const files: string[] = [];
+
+  async function recurse(dir: string, depth: number, relPath: string) {
+    if (depth > maxDepth) return;
+
+    try {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        const newRelPath = relPath ? `${relPath}/${entry.name}` : entry.name;
+
+        if (entry.isDirectory()) {
+          await recurse(fullPath, depth + 1, newRelPath);
+        } else if (entry.isFile() && entry.name !== 'SKILL.md') {
+          files.push(newRelPath);
+        }
+      }
+    } catch {
+      // Directory not accessible
+    }
+  }
+
+  await recurse(skillPath, 0, '');
+  return files.sort();
+}
+
+/**
  * Find executable scripts in a skill's directory and scripts/ subdirectory.
  * Only files with executable bit set are returned.
  */
@@ -844,14 +876,21 @@ ${content}
             return `Skill "${args.skill_name}" not found. Available skills: ${available}`;
           }
 
+          // Get all files in the skill directory
+          const skillFiles = await listSkillFiles(skill.path);
+
           const scriptsXml = skill.scripts.length > 0
             ? `\n    <scripts>\n${skill.scripts.map(s => `      <script>${s.name}</script>`).join('\n')}\n    </scripts>`
+            : '';
+
+          const filesXml = skillFiles.length > 0
+            ? `\n    <files>\n${skillFiles.map(f => `      <file>${f}</file>`).join('\n')}\n    </files>`
             : '';
 
           const skillContent = `<skill name="${skill.name}">
   <metadata>
     <source>${skill.label}</source>
-    <directory>${skill.path}</directory>${scriptsXml}
+    <directory>${skill.path}</directory>${scriptsXml}${filesXml}
   </metadata>
 
   ${toolTranslation}
@@ -867,7 +906,11 @@ ${skill.content}
             ? `\nAvailable scripts: ${skill.scripts.map(s => s.name).join(', ')}`
             : '';
 
-          return `Skill "${skill.name}" loaded.${scriptInfo}`;
+          const filesInfo = skillFiles.length > 0
+            ? `\nAvailable files: ${skillFiles.join(', ')}`
+            : '';
+
+          return `Skill "${skill.name}" loaded.${scriptInfo}${filesInfo}`;
         }
       }),
     }
