@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Added
+
+- Added file listing to `use_skill` output
+
 ## [0.2.0]
 
 ### Added
