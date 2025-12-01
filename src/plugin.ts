@@ -147,23 +147,27 @@ type SkillFrontmatter = z.infer<typeof SkillFrontmatterSchema>;
 /**
  * Inject content into session via noReply + synthetic.
  * Content persists across context compaction.
- *
- * IMPORTANT: Pass a model to avoid opencode issue #4475 where noReply
- * prompts without an explicit model cause model switching to agent default.
+ * Must pass model and agent to prevent mode/model switching.
  */
 type OpencodeClient = PluginInput["client"];
+
+interface SessionContext {
+  model?: { providerID: string; modelID: string };
+  agent?: string;
+}
 
 async function injectSyntheticContent(
   client: OpencodeClient,
   sessionID: string,
   text: string,
-  model?: { providerID: string; modelID: string }
+  context?: SessionContext
 ): Promise<void> {
   await client.session.prompt({
     path: { id: sessionID },
     body: {
       noReply: true,
-      model,
+      model: context?.model,
+      agent: context?.agent,
       parts: [{ type: "text", text, synthetic: true }],
     },
   });
@@ -177,7 +181,7 @@ async function injectSkillsList(
   client: OpencodeClient,
   sessionID: string,
   skills: SkillMetadata[],
-  model?: { providerID: string; modelID: string }
+  context?: SessionContext
 ): Promise<void> {
   if (skills.length === 0) return;
 
@@ -193,7 +197,7 @@ Use the use_skill, read_skill_file, run_skill_script, and find_skills tools to w
 
 ${skillsList}
 </available-skills>`,
-    model
+    context
   );
 }
 
@@ -628,25 +632,18 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
   const skillsByName = await discoverAllSkills(directory);
   const allSkills = Array.from(skillsByName.values());
 
-  // Cache session models to avoid model-switching bug (opencode issue #4475)
-  // When using noReply, we need to pass the current model explicitly
-  const sessionModels = new Map<string, { providerID: string; modelID: string }>();
-
   /**
-   * Get the current model for a session.
-   * Uses cache first, falls back to querying session messages.
-   * This is needed to work around opencode issue #4475 where noReply
-   * prompts without an explicit model cause model switching.
+   * Get the current context (model + agent) for a session by querying messages.
+   * This mirrors OpenCode's internal lastModel() logic to find the most recent
+   * user message and extract its model/agent.
+   *
+   * Used during tool execution when we don't have direct access to the
+   * current user message's context.
    */
-  async function getCurrentModel(
+  async function getSessionContext(
     sessionID: string,
     limit: number = 50
-  ): Promise<{ providerID: string; modelID: string } | undefined> {
-    // Fast path: use cached model
-    const cached = sessionModels.get(sessionID);
-    if (cached) return cached;
-
-    // Slow path: query session messages
+  ): Promise<SessionContext | undefined> {
     try {
       const response = await client.session.messages({
         path: { id: sessionID },
@@ -654,11 +651,13 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
       });
 
       if (response.data) {
+        // Messages are returned newest first, find the most recent user message
         for (const msg of response.data) {
           if (msg.info.role === "user" && "model" in msg.info && msg.info.model) {
-            const model = msg.info.model;
-            sessionModels.set(sessionID, model); // Cache for future
-            return model;
+            return {
+              model: msg.info.model,
+              agent: msg.info.agent
+            };
           }
         }
       }
@@ -713,12 +712,10 @@ ${namespace}
 </EXTREMELY_IMPORTANT>`;
   };
 
-
-
-
   const maybeInjectSuperpowersBootstrap = async (
     sessionID: string | undefined,
-    reason: 'initial' | 'compaction'
+    reason: 'initial' | 'compaction',
+    context?: SessionContext
   ) => {
     if (!sessionID) return;
     if (!superpowersModeEnabled) return;
@@ -728,8 +725,8 @@ ${namespace}
     const content = buildSuperpowersBootstrap(compact);
     if (!content) return;
 
-    const model = await getCurrentModel(sessionID);
-    await injectSyntheticContent(client, sessionID, content, model);
+    const ctx = context ?? await getSessionContext(sessionID);
+    await injectSyntheticContent(client, sessionID, content, ctx);
   };
 
   // Tool translation guide for skills written for Claude Code
@@ -741,17 +738,9 @@ This skill may reference Claude Code tools. Use OpenCode equivalents:
 - Read/Write/Edit/Bash/Glob/Grep/WebFetch -> lowercase (read/write/edit/bash/glob/grep/webfetch)
 </tool-translation>`;
 
-  const tools: Record<string, ToolDefinition> = {};
-
-
   return {
-    "chat.message": async (_input, output) => {
+    "chat.message": async (input, output) => {
       const sessionID = output.message.sessionID;
-
-      // Cache the model for this session (to avoid model-switching bug #4475)
-      if (output.message.model) {
-        sessionModels.set(sessionID, output.message.model);
-      }
 
       // Skip if already injected this session (in-memory fast path)
       if (injectedSessions.has(sessionID)) return;
@@ -772,18 +761,26 @@ This skill may reference Claude Code tools. Use OpenCode equivalents:
       }
 
       injectedSessions.add(sessionID);
-      const model = await getCurrentModel(sessionID);
-      await maybeInjectSuperpowersBootstrap(sessionID, 'initial');
-      await injectSkillsList(client, sessionID, allSkills, model);
+
+      // Use output.message which has the resolved model/agent values.
+      // This ensures our injected noReply message has identical model/agent
+      // to the real user message, preventing mode/model switching.
+      const context: SessionContext = {
+        model: output.message.model,
+        agent: output.message.agent
+      };
+
+      await maybeInjectSuperpowersBootstrap(sessionID, 'initial', context);
+      await injectSkillsList(client, sessionID, allSkills, context);
     },
 
     event: async ({ event }) => {
       // Re-inject skills list after context compaction
       if (event.type === 'session.compacted') {
         const sessionID = event.properties.sessionID;
-        const model = await getCurrentModel(sessionID);
-        await maybeInjectSuperpowersBootstrap(sessionID, 'compaction');
-        await injectSkillsList(client, sessionID, allSkills, model);
+        const context = await getSessionContext(sessionID);
+        await maybeInjectSuperpowersBootstrap(sessionID, 'compaction', context);
+        await injectSkillsList(client, sessionID, allSkills, context);
       }
     },
 
@@ -855,8 +852,8 @@ ${content}
   </content>
 </skill-file>`;
 
-            const model = await getCurrentModel(ctx.sessionID);
-            await injectSyntheticContent(client, ctx.sessionID, wrappedContent, model);
+            const context = await getSessionContext(ctx.sessionID);
+            await injectSyntheticContent(client, ctx.sessionID, wrappedContent, context);
 
             return `File "${args.filename}" from skill "${skill.name}" loaded.`;
           } catch {
@@ -957,8 +954,8 @@ ${skill.content}
   </content>
 </skill>`;
 
-          const model = await getCurrentModel(ctx.sessionID);
-          await injectSyntheticContent(client, ctx.sessionID, skillContent, model);
+          const context = await getSessionContext(ctx.sessionID);
+          await injectSyntheticContent(client, ctx.sessionID, skillContent, context);
 
           const scriptInfo = skill.scripts.length > 0
             ? `\nAvailable scripts: ${skill.scripts.map(s => s.name).join(', ')}`
