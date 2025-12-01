@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed unintended model switching when using skill tools by explicitly passing the current model during `noReply` operations (workaround for opencode issue #4475)
+
 ## [0.3.0]
 
 ### Added
