@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Fixed
+
+- Preserve agent mode when injecting synthetic messages on session start
+
 ## [0.3.1]
 
 ### Fixed
