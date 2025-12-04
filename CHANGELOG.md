@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed file and directory detection to properly handle symlinks by using `fs.stat`
+
 ## [0.3.2]
 
 ### Fixed
