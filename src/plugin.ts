@@ -218,10 +218,15 @@ async function listSkillFiles(skillPath: string, maxDepth: number = 3): Promise<
         const fullPath = path.join(dir, entry.name);
         const newRelPath = relPath ? `${relPath}/${entry.name}` : entry.name;
 
-        if (entry.isDirectory()) {
-          await recurse(fullPath, depth + 1, newRelPath);
-        } else if (entry.isFile() && entry.name !== 'SKILL.md') {
-          files.push(newRelPath);
+        try {
+          const stats = await fs.stat(fullPath);
+          if (stats.isDirectory()) {
+            await recurse(fullPath, depth + 1, newRelPath);
+          } else if (stats.isFile() && entry.name !== 'SKILL.md') {
+            files.push(newRelPath);
+          }
+        } catch {
+          // Skip inaccessible entries
         }
       }
     } catch {
@@ -246,10 +251,16 @@ async function findScripts(skillPath: string): Promise<Script[]> {
       const entries = await fs.readdir(dir, { withFileTypes: true });
 
       for (const entry of entries) {
-        if (!entry.isFile()) continue;
-
         const fullPath = path.join(dir, entry.name);
-        const stats = await fs.stat(fullPath);
+
+        let stats;
+        try {
+          stats = await fs.stat(fullPath);
+        } catch {
+          continue;
+        }
+
+        if (!stats.isFile()) continue;
 
         // Check executable bit (owner, group, or other)
         if (stats.mode & 0o111) {
@@ -360,9 +371,17 @@ async function findSkillsRecursive(
       const entries = await fs.readdir(dir, { withFileTypes: true });
 
       for (const entry of entries) {
-        if (!entry.isDirectory()) continue;
-
         const fullPath = path.join(dir, entry.name);
+
+        let stats;
+        try {
+          stats = await fs.stat(fullPath);
+        } catch {
+          continue;
+        }
+
+        if (!stats.isDirectory()) continue;
+
         const skillFile = path.join(fullPath, 'SKILL.md');
         const newRelPath = relPath ? `${relPath}/${entry.name}` : entry.name;
 
@@ -468,7 +487,13 @@ async function discoverPluginCacheSkills(label: SkillLabel): Promise<Array<{ ski
     const plugins = await fs.readdir(cacheDir, { withFileTypes: true });
 
     for (const plugin of plugins) {
-      if (!plugin.isDirectory()) continue;
+      let pluginStats;
+      try {
+        pluginStats = await fs.stat(path.join(cacheDir, plugin.name));
+      } catch {
+        continue;
+      }
+      if (!pluginStats.isDirectory()) continue;
 
       const skillsDir = path.join(cacheDir, plugin.name, 'skills');
 
@@ -476,7 +501,13 @@ async function discoverPluginCacheSkills(label: SkillLabel): Promise<Array<{ ski
         const skillDirs = await fs.readdir(skillsDir, { withFileTypes: true });
 
         for (const skillDir of skillDirs) {
-          if (!skillDir.isDirectory()) continue;
+          let skillDirStats;
+          try {
+            skillDirStats = await fs.stat(path.join(skillsDir, skillDir.name));
+          } catch {
+            continue;
+          }
+          if (!skillDirStats.isDirectory()) continue;
 
           const skillMdPath = path.join(skillsDir, skillDir.name, 'SKILL.md');
 
