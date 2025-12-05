@@ -18,6 +18,8 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+## [0.4.0]
+
 ### Changed
 
 - Script discovery now recursively searches the entire skill directory (max depth 10) instead of only the root and `scripts/` subdirectory
@@ -72,10 +74,11 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
 
-[unreleased]: https://github.com/joshuadavidthomas/opencode-agent-skills/compare/v0.3.3...HEAD
+[unreleased]: https://github.com/joshuadavidthomas/opencode-agent-skills/compare/v0.4.0...HEAD
 [0.1.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.1.0
 [0.2.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.2.0
 [0.3.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.3.0
 [0.3.1]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.3.1
 [0.3.2]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.3.2
 [0.3.3]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.3.3
+[0.4.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.4.0
