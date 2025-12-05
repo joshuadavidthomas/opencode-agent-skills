@@ -86,8 +86,8 @@ function parseYamlFrontmatter(text: string): Record<string, unknown> {
 }
 
 interface Script {
-  name: string;
-  path: string;
+  relativePath: string;
+  absolutePath: string;
 }
 
 type SkillLabel = "project" | "user" | "claude-project" | "claude-user" | "claude-plugins";
@@ -239,19 +239,26 @@ async function listSkillFiles(skillPath: string, maxDepth: number = 3): Promise<
 }
 
 /**
- * Find executable scripts in a skill's directory and scripts/ subdirectory.
+ * Recursively find executable scripts in a skill's directory.
+ * Skips hidden directories (starting with .) and common dependency dirs.
  * Only files with executable bit set are returned.
  */
-async function findScripts(skillPath: string): Promise<Script[]> {
+async function findScripts(skillPath: string, maxDepth: number = 10): Promise<Script[]> {
   const scripts: Script[] = [];
-  const dirsToCheck = [skillPath, path.join(skillPath, 'scripts')];
+  const skipDirs = new Set(['node_modules', '__pycache__', '.git', '.venv', 'venv', '.tox', '.nox']);
 
-  for (const dir of dirsToCheck) {
+  async function recurse(dir: string, depth: number, relPath: string) {
+    if (depth > maxDepth) return;
+
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
 
       for (const entry of entries) {
+        if (entry.name.startsWith('.')) continue;
+        if (skipDirs.has(entry.name)) continue;
+
         const fullPath = path.join(dir, entry.name);
+        const newRelPath = relPath ? `${relPath}/${entry.name}` : entry.name;
 
         let stats;
         try {
@@ -260,23 +267,25 @@ async function findScripts(skillPath: string): Promise<Script[]> {
           continue;
         }
 
-        if (!stats.isFile()) continue;
-
-        // Check executable bit (owner, group, or other)
-        if (stats.mode & 0o111) {
-          const nameWithoutExt = path.parse(entry.name).name;
-          scripts.push({
-            name: nameWithoutExt,
-            path: fullPath
-          });
+        if (stats.isDirectory()) {
+          await recurse(fullPath, depth + 1, newRelPath);
+        } else if (stats.isFile()) {
+          // Check executable bit (owner, group, or other)
+          if (stats.mode & 0o111) {
+            scripts.push({
+              relativePath: newRelPath,
+              absolutePath: fullPath
+            });
+          }
         }
       }
     } catch {
-      // Directory doesn't exist or not accessible - that's fine
+      // Directory not accessible
     }
   }
 
-  return scripts;
+  await recurse(skillPath, 0, '');
+  return scripts.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
 }
 
 /**
@@ -839,7 +848,7 @@ This skill may reference Claude Code tools. Use OpenCode equivalents:
           return filtered
             .map(s => {
               const scripts = s.scripts.length > 0
-                ? ` [scripts: ${s.scripts.map(sc => sc.name).join(', ')}]`
+                ? ` [scripts: ${s.scripts.map(sc => sc.relativePath).join(', ')}]`
                 : '';
               return `${s.name} (${s.label})\n  ${s.description}${scripts}`;
             })
@@ -850,16 +859,16 @@ This skill may reference Claude Code tools. Use OpenCode equivalents:
       read_skill_file: tool({
         description: "Read a supporting file from a skill's directory (docs, examples, configs).",
         args: {
-          skill_name: tool.schema.string()
+          skill: tool.schema.string()
             .describe("Name of the skill"),
           filename: tool.schema.string()
             .describe("File to read, relative to skill directory (e.g., 'anthropic-best-practices.md', 'scripts/helper.sh')")
         },
         async execute(args, ctx) {
-          const skill = resolveSkill(args.skill_name, skillsByName);
+          const skill = resolveSkill(args.skill, skillsByName);
 
           if (!skill) {
-            return `Skill "${args.skill_name}" not found. Use find_skills to see available skills.`;
+            return `Skill "${args.skill}" not found. Use find_skills to see available skills.`;
           }
 
           // Security: ensure path doesn't escape skill directory
@@ -902,35 +911,31 @@ ${content}
       run_skill_script: tool({
         description: "Execute a script from a skill's directory. Scripts are run with the skill directory as CWD.",
         args: {
-          skill_name: tool.schema.string()
+          skill: tool.schema.string()
             .describe("Name of the skill"),
-          script_name: tool.schema.string()
-            .describe("Name of the script to run (with or without extension)"),
+          script: tool.schema.string()
+            .describe("Relative path to the script (e.g., 'build.sh', 'tools/deploy.sh')"),
           arguments: tool.schema.array(tool.schema.string()).optional()
             .describe("Arguments to pass to the script")
         },
         async execute(args) {
-          const skill = resolveSkill(args.skill_name, skillsByName);
+          const skill = resolveSkill(args.skill, skillsByName);
 
           if (!skill) {
-            return `Skill "${args.skill_name}" not found. Use find_skills to see available skills.`;
+            return `Skill "${args.skill}" not found. Use find_skills to see available skills.`;
           }
 
-          // Find the script
-          const script = skill.scripts.find(s =>
-            s.name === args.script_name ||
-            s.name === path.parse(args.script_name).name
-          );
+          const script = skill.scripts.find(s => s.relativePath === args.script);
 
           if (!script) {
-            const available = skill.scripts.map(s => s.name).join(', ') || 'none';
-            return `Script "${args.script_name}" not found in skill "${skill.name}". Available scripts: ${available}`;
+            const available = skill.scripts.map(s => s.relativePath).join(', ') || 'none';
+            return `Script "${args.script}" not found in skill "${skill.name}". Available scripts: ${available}`;
           }
 
           try {
             $.cwd(skill.path);
             const scriptArgs = args.arguments || [];
-            const result = await $`${script.path} ${scriptArgs}`.text();
+            const result = await $`${script.absolutePath} ${scriptArgs}`.text();
             return result;
           } catch (error: unknown) {
             if (error instanceof Error && 'exitCode' in error) {
@@ -950,22 +955,22 @@ ${content}
       use_skill: tool({
         description: "Load a skill's SKILL.md content into context. Skills contain proven workflows, techniques, and patterns.",
         args: {
-          skill_name: tool.schema.string()
+          skill: tool.schema.string()
             .describe("Name of the skill (e.g., 'brainstorming', 'project:my-skill', 'user:my-skill')")
         },
         async execute(args, ctx) {
-          const skill = resolveSkill(args.skill_name, skillsByName);
+          const skill = resolveSkill(args.skill, skillsByName);
 
           if (!skill) {
             const available = allSkills.map(s => s.name).join(', ');
-            return `Skill "${args.skill_name}" not found. Available skills: ${available}`;
+            return `Skill "${args.skill}" not found. Available skills: ${available}`;
           }
 
           // Get all files in the skill directory
           const skillFiles = await listSkillFiles(skill.path);
 
           const scriptsXml = skill.scripts.length > 0
-            ? `\n    <scripts>\n${skill.scripts.map(s => `      <script>${s.name}</script>`).join('\n')}\n    </scripts>`
+            ? `\n    <scripts>\n${skill.scripts.map(s => `      <script>${s.relativePath}</script>`).join('\n')}\n    </scripts>`
             : '';
 
           const filesXml = skillFiles.length > 0
@@ -989,7 +994,7 @@ ${skill.content}
           await injectSyntheticContent(client, ctx.sessionID, skillContent, context);
 
           const scriptInfo = skill.scripts.length > 0
-            ? `\nAvailable scripts: ${skill.scripts.map(s => s.name).join(', ')}`
+            ? `\nAvailable scripts: ${skill.scripts.map(s => s.relativePath).join(', ')}`
             : '';
 
           const filesInfo = skillFiles.length > 0
