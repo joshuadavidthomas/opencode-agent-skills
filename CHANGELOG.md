@@ -18,6 +18,13 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Changed
+
+- Script discovery now recursively searches the entire skill directory (max depth 10) instead of only the root and `scripts/` subdirectory
+- Scripts are now identified by relative path (e.g., `tools/build.sh`) instead of base name
+- Renamed `skill_name` parameter to `skill` in `read_skill_file`, `run_skill_script`, and `use_skill` tools
+- Renamed `script_name` parameter to `script` in `run_skill_script` tool
+
 ## [0.3.3]
 
 ### Fixed
