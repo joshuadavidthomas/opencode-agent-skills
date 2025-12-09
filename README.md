@@ -10,13 +10,11 @@ A dynamic skills plugin for OpenCode that provides tools for loading and using r
 - **Claude Code compatible** - Works with existing Claude Code skills and plugins
 - **Optional Superpowers integration** - Drop-in support for the [Superpowers](https://github.com/obra/superpowers) workflow
 
-## Installation
-
-### Requirements
+## Requirements
 
 - [OpenCode](https://opencode.ai/) v1.0.110 or later
 
-### Quick Install
+## Installation
 
 Tell OpenCode:
 
