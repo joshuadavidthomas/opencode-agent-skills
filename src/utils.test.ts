@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect } from "bun:test";
-import { levenshtein, findClosestMatch } from "./plugin";
+import { levenshtein, findClosestMatch } from "./utils";
 
 describe("levenshtein", () => {
   test("identical strings have distance 0", () => {
