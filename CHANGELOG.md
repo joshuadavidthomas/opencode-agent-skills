@@ -22,6 +22,11 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - Added "Did you mean..." fuzzy matching suggestions when skill or script names are not found in all tools (`use_skill`, `read_skill_file`, `run_skill_script`, `find_skills`)
 
+### Changed
+
+- **Internal**: Reorganized codebase into separate modules (`claude.ts`, `skills.ts`, `tools.ts`, `utils.ts`, `superpowers.ts`) for better maintainability
+- **Internal**: Improved code quality by removing AI-generated comments and unnecessary code
+
 ## [0.4.1]
 
 ### Changed
