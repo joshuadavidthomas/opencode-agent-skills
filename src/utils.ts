@@ -1,6 +1,36 @@
 import type { PluginInput } from "@opencode-ai/plugin";
+import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { discoverAllSkills } from "./skills";
+
+/**
+ * Result from finding a file in a directory.
+ */
+export interface FileDiscoveryResult {
+  filePath: string;
+  relativePath: string;
+}
+
+/**
+ * Check if a file exists in a directory and return path info.
+ * 
+ * @param directory - Directory to check
+ * @param relativePath - Relative path to use in result (caller-specific)
+ * @param filename - Name of file to look for (e.g., 'SKILL.md')
+ * @returns Path info if file exists, null otherwise
+ */
+export async function findFile(
+  directory: string,
+  relativePath: string,
+  filename: string
+): Promise<FileDiscoveryResult | null> {
+  const filePath = path.join(directory, filename);
+  try {
+    await fs.stat(filePath);
+    return { filePath, relativePath };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Parse simple YAML frontmatter.
@@ -17,10 +47,8 @@ export function parseYamlFrontmatter(text: string): Record<string, unknown> {
   let currentObject: Record<string, string> | null = null;
 
   for (const line of lines) {
-    // Skip empty lines
-    if (line.trim() === '') continue;
+      if (line.trim() === '') continue;
 
-    // Check for array item (starts with "  - ")
     if (line.match(/^\s{2}-\s+/) && currentKey !== null) {
       const value = line.replace(/^\s{2}-\s+/, '').trim();
       if (currentArray === null) {
@@ -31,7 +59,6 @@ export function parseYamlFrontmatter(text: string): Record<string, unknown> {
       continue;
     }
 
-    // Check for nested object value (starts with "  " but not "  - ")
     if (line.match(/^\s{2}\w/) && currentKey !== null) {
       const nestedMatch = line.match(/^\s{2}(\w[\w-]*)\s*:\s*(.*)$/);
       if (nestedMatch && nestedMatch[1] && nestedMatch[2] !== undefined) {
@@ -44,10 +71,8 @@ export function parseYamlFrontmatter(text: string): Record<string, unknown> {
       }
     }
 
-    // Top-level key: value
     const topMatch = line.match(/^([\w-]+)\s*:\s*(.*)$/);
     if (topMatch && topMatch[1] && topMatch[2] !== undefined) {
-      // Save any pending array/object
       currentArray = null;
       currentObject = null;
 
@@ -55,12 +80,10 @@ export function parseYamlFrontmatter(text: string): Record<string, unknown> {
       const value = topMatch[2].trim();
       currentKey = key;
 
-      // If value is empty, it's the start of an array or object
       if (value === '') {
         continue;
       }
 
-      // Remove surrounding quotes if present
       const unquoted = value.replace(/^["'](.*)["']$/, '$1');
       result[key] = unquoted;
     }
@@ -77,19 +100,15 @@ export function parseYamlFrontmatter(text: string): Record<string, unknown> {
 export function levenshtein(a: string, b: string): number {
   const m = a.length;
   const n = b.length;
-  
-  // Create distance matrix
   const dp: number[][] = Array.from({ length: m + 1 }, (_, i) =>
     Array.from({ length: n + 1 }, (_, j) => i || j)
   );
-  
-  // Fill matrix using dynamic programming
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
       dp[i]![j] = Math.min(
-        dp[i - 1]![j]! + 1,                           // deletion
-        dp[i]![j - 1]! + 1,                           // insertion
-        dp[i - 1]![j - 1]! + (a[i - 1] !== b[j - 1] ? 1 : 0)  // substitution
+        dp[i - 1]![j]! + 1,
+        dp[i]![j - 1]! + 1,
+        dp[i - 1]![j - 1]! + (a[i - 1] !== b[j - 1] ? 1 : 0)
       );
     }
   }
@@ -114,23 +133,19 @@ export function findClosestMatch(input: string, candidates: string[]): string | 
     const candidateLower = candidate.toLowerCase();
     let score = 0;
     
-    // Prefix match is strongest signal (0.9-1.0)
     if (candidateLower.startsWith(inputLower)) {
       score = 0.9 + (inputLower.length / candidateLower.length) * 0.1;
       
-      // Boost score if prefix is followed by word boundary
       const nextChar = candidateLower[inputLower.length];
       if (nextChar && /[-_/.]/.test(nextChar)) {
-        score += 0.05; // Word boundary bonus
+        score += 0.05;
       }
     } else if (inputLower.startsWith(candidateLower)) {
       score = 0.8;
     }
-    // Substring match is decent (0.7)
     else if (candidateLower.includes(inputLower) || inputLower.includes(candidateLower)) {
       score = 0.7;
     }
-    // Fall back to Levenshtein similarity
     else {
       const distance = levenshtein(inputLower, candidateLower);
       const maxLength = Math.max(inputLower.length, candidateLower.length);
@@ -143,7 +158,6 @@ export function findClosestMatch(input: string, candidates: string[]): string | 
     }
   }
   
-  // Only return match if above threshold
   return bestScore >= 0.4 ? bestMatch : null;
 }
 
@@ -204,7 +218,6 @@ export async function getSessionContext(
     });
 
     if (response.data) {
-      // Messages are returned newest first, find the most recent user message
       for (const msg of response.data) {
         if (msg.info.role === "user" && "model" in msg.info && msg.info.model) {
           return {
@@ -214,40 +227,7 @@ export async function getSessionContext(
         }
       }
     }
-  } catch {
-    // On error, return undefined (let opencode use its default)
-  }
+  } catch {}
 
   return undefined;
-}
-
-/**
- * Inject the available skills list into a session.
- * Used on session start and after compaction.
- */
-export async function injectSkillsList(
-  directory: string,
-  client: OpencodeClient,
-  sessionID: string,
-  context?: SessionContext
-): Promise<void> {
-  const skillsByName = await discoverAllSkills(directory);
-  const skills = Array.from(skillsByName.values());
-  
-  if (skills.length === 0) return;
-
-  const skillsList = skills
-    .map(s => `- ${s.name}: ${s.description}`)
-    .join('\n');
-
-  await injectSyntheticContent(
-    client,
-    sessionID,
-    `<available-skills>
-Use the use_skill, read_skill_file, run_skill_script, and find_skills tools to work with skills.
-
-${skillsList}
-</available-skills>`,
-    context
-  );
 }

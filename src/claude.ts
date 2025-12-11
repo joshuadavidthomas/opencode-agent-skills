@@ -8,47 +8,8 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { homedir } from "node:os";
-
-// ============================================================================
-// Types
-// ============================================================================
-
-/**
- * Skill label indicating the source/location of a skill.
- * - project: .opencode/skills/ in project directory
- * - user: ~/.config/opencode/skills/
- * - claude-project: .claude/skills/ in project directory
- * - claude-user: ~/.claude/skills/
- * - claude-plugins: ~/.claude/plugins/ (cache or marketplace)
- */
-export type SkillLabel = "project" | "user" | "claude-project" | "claude-user" | "claude-plugins";
-
-/**
- * Structure of Claude's marketplace.json file.
- * Defines which skills are available in a marketplace.
- */
-export interface MarketplaceManifest {
-  plugins: Array<{
-    name: string;
-    skills?: string[];
-  }>;
-}
-
-/**
- * Structure of Claude's installed_plugins.json file.
- * Maps plugin keys (e.g., "document-skills@anthropic-agent-skills") to install paths.
- */
-export interface InstalledPlugins {
-  plugins: {
-    [key: string]: {
-      installPath: string;
-    };
-  };
-}
-
-// ============================================================================
-// Constants
-// ============================================================================
+import { findFile } from "./utils";
+import type { LabeledDiscoveryResult } from "./skills";
 
 /**
  * Tool translation guide for skills written for Claude Code.
@@ -62,66 +23,65 @@ This skill may reference Claude Code tools. Use OpenCode equivalents:
 - Read/Write/Edit/Bash/Glob/Grep/WebFetch -> lowercase (read/write/edit/bash/glob/grep/webfetch)
 </tool-translation>`;
 
-// ============================================================================
-// Discovery Functions
-// ============================================================================
+/** Structure of Claude's marketplace.json file */
+interface MarketplaceManifest {
+  plugins: Array<{
+    name: string;
+    skills?: string[];
+  }>;
+}
+
+/** Structure of Claude's installed_plugins.json file */
+interface InstalledPlugins {
+  plugins: {
+    [key: string]: {
+      installPath: string;
+    };
+  };
+}
 
 /**
  * Discover skills from Claude plugin marketplaces.
  * Only loads skills from INSTALLED plugins (checked via installed_plugins.json).
  */
-export async function discoverMarketplaceSkills(
-  label: SkillLabel
-): Promise<Array<{ skillPath: string; relativePath: string; label: SkillLabel }>> {
-  const results: Array<{ skillPath: string; relativePath: string; label: SkillLabel }> = [];
+export async function discoverMarketplaceSkills(): Promise<LabeledDiscoveryResult[]> {
+  const results: LabeledDiscoveryResult[] = [];
   const claudeDir = path.join(homedir(), '.claude', 'plugins');
   const installedPath = path.join(claudeDir, 'installed_plugins.json');
   const marketplacesDir = path.join(claudeDir, 'marketplaces');
 
-  // Read installed plugins
   let installed: InstalledPlugins;
   try {
     const content = await fs.readFile(installedPath, 'utf-8');
     installed = JSON.parse(content);
   } catch {
-    // No installed plugins file
     return results;
   }
 
-  // Process each installed plugin (e.g., "document-skills@anthropic-agent-skills")
   for (const pluginKey of Object.keys(installed.plugins || {})) {
     const [pluginName, marketplaceName] = pluginKey.split('@');
     if (!pluginName || !marketplaceName) continue;
 
-    // Read the marketplace manifest
     const manifestPath = path.join(marketplacesDir, marketplaceName, '.claude-plugin', 'marketplace.json');
     let manifest: MarketplaceManifest;
     try {
       const manifestContent = await fs.readFile(manifestPath, 'utf-8');
       manifest = JSON.parse(manifestContent);
     } catch {
-      continue; // Can't read manifest
+      continue;
     }
 
-    // Find the specific plugin in the manifest
     const plugin = manifest.plugins?.find(p => p.name === pluginName);
     if (!plugin?.skills) continue;
 
-    // Load only skills from this installed plugin
     for (const skillRelPath of plugin.skills) {
       const cleanPath = skillRelPath.replace(/^\.\//, '');
-      const skillMdPath = path.join(marketplacesDir, marketplaceName, cleanPath, 'SKILL.md');
+      const directory = path.join(marketplacesDir, marketplaceName, cleanPath);
+      const skillName = path.basename(cleanPath);
 
-      try {
-        await fs.stat(skillMdPath);
-        const skillName = path.basename(cleanPath);
-        results.push({
-          skillPath: skillMdPath,
-          relativePath: skillName,
-          label
-        });
-      } catch {
-        // SKILL.md doesn't exist
+      const found = await findFile(directory, skillName, 'SKILL.md');
+      if (found) {
+        results.push({ ...found, label: 'claude-plugins' });
       }
     }
   }
@@ -133,55 +93,36 @@ export async function discoverMarketplaceSkills(
  * Discover skills from Claude Code's plugin cache directory.
  * Plugins are cached at ~/.claude/plugins/cache/<plugin-name>/skills/<skill-name>/SKILL.md
  */
-export async function discoverPluginCacheSkills(label: SkillLabel): Promise<Array<{ skillPath: string; relativePath: string; label: SkillLabel }>> {
-  const results: Array<{ skillPath: string; relativePath: string; label: SkillLabel }> = [];
+export async function discoverPluginCacheSkills(): Promise<LabeledDiscoveryResult[]> {
+  const results: LabeledDiscoveryResult[] = [];
   const cacheDir = path.join(homedir(), '.claude', 'plugins', 'cache');
 
   try {
-    const plugins = await fs.readdir(cacheDir, { withFileTypes: true });
-
-    for (const plugin of plugins) {
-      let pluginStats;
-      try {
-        pluginStats = await fs.stat(path.join(cacheDir, plugin.name));
-      } catch {
-        continue;
-      }
-      if (!pluginStats.isDirectory()) continue;
-
-      const skillsDir = path.join(cacheDir, plugin.name, 'skills');
-
-      try {
-        const skillDirs = await fs.readdir(skillsDir, { withFileTypes: true });
-
-        for (const skillDir of skillDirs) {
-          let skillDirStats;
-          try {
-            skillDirStats = await fs.stat(path.join(skillsDir, skillDir.name));
-          } catch {
-            continue;
-          }
-          if (!skillDirStats.isDirectory()) continue;
-
-          const skillMdPath = path.join(skillsDir, skillDir.name, 'SKILL.md');
-
-          try {
-            await fs.stat(skillMdPath);
-            results.push({
-              skillPath: skillMdPath,
-              relativePath: skillDir.name,
-              label
-            });
-          } catch {
-            // SKILL.md doesn't exist
-          }
-        }
-      } catch {
-        // No skills directory in this plugin
-      }
-    }
+    await fs.access(cacheDir);
   } catch {
-    // Cache directory doesn't exist
+    return [];
+  }
+
+  const plugins = await fs.readdir(cacheDir, { withFileTypes: true });
+
+  for (const plugin of plugins) {
+    if (!plugin.isDirectory()) continue;
+
+    const skillsDir = path.join(cacheDir, plugin.name, 'skills');
+
+    try {
+      const skillDirs = await fs.readdir(skillsDir, { withFileTypes: true });
+
+      for (const skillDir of skillDirs) {
+        if (!skillDir.isDirectory()) continue;
+
+        const directory = path.join(skillsDir, skillDir.name);
+        const found = await findFile(directory, skillDir.name, 'SKILL.md');
+        if (found) {
+          results.push({ ...found, label: 'claude-plugins' });
+        }
+      }
+    } catch { }
   }
 
   return results;

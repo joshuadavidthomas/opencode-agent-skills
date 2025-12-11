@@ -13,11 +13,8 @@
 
 import type { Plugin } from "@opencode-ai/plugin";
 import { maybeInjectSuperpowersBootstrap } from "./superpowers";
-import {
-  getSessionContext,
-  injectSkillsList,
-  type SessionContext,
-} from "./utils";
+import { getSessionContext, type SessionContext } from "./utils";
+import { injectSkillsList } from "./skills";
 import { FindSkills, ReadSkillFile, RunSkillScript, UseSkill } from "./tools";
 
 export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
@@ -60,7 +57,6 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
     },
 
     event: async ({ event }) => {
-      // Re-inject skills list after context compaction
       if (event.type === 'session.compacted') {
         const sessionID = event.properties.sessionID;
         const context = await getSessionContext(client, sessionID);

@@ -123,7 +123,6 @@ ${content}
 
         return `File "${args.filename}" from skill "${skill.name}" loaded.`;
       } catch {
-        // List available files on error
         try {
           const files = await fs.readdir(skill.path);
           return `File "${args.filename}" not found. Available files: ${files.join(', ')}`;
@@ -222,7 +221,6 @@ export const UseSkill = (directory: string, client: OpencodeClient) => {
         return `Skill "${args.skill}" not found. Use find_skills to list available skills.`;
       }
 
-      // Get all files in the skill directory
       const skillFiles = await listSkillFiles(skill.path);
 
       const scriptsXml = skill.scripts.length > 0

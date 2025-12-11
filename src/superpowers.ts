@@ -9,7 +9,6 @@ import type { OpencodeClient, SessionContext } from "./utils";
 import { injectSyntheticContent, getSessionContext } from "./utils";
 import { discoverAllSkills } from "./skills";
 
-// Constants for tool and namespace mappings
 const toolMapping = `**Tool Mapping for OpenCode:**
 - \`TodoWrite\` → \`todowrite\`
 - \`Task\` tool with subagents → Use the \`task\` tool with \`subagent_type\`
@@ -35,16 +34,13 @@ export const maybeInjectSuperpowersBootstrap = async (
   sessionID: string,
   context?: SessionContext
 ) => {
-  // Check if superpowers mode is enabled
   const superpowersModeEnabled = process.env.OPENCODE_AGENT_SKILLS_SUPERPOWERS_MODE === 'true';
   if (!superpowersModeEnabled) return;
 
-  // Discover and find using-superpowers skill
   const skillsByName = await discoverAllSkills(directory);
   const usingSuperpowersSkill = skillsByName.get('using-superpowers');
   if (!usingSuperpowersSkill) return;
 
-  // Build content
   const content = `<EXTREMELY_IMPORTANT>
 You have superpowers.
 
