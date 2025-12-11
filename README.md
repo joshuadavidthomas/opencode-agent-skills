@@ -53,7 +53,7 @@ This plugin provides 4 tools to OpenCode:
 | `use_skill` | Load a skill's SKILL.md into context |
 | `read_skill_file` | Read supporting files from a skill directory |
 | `run_skill_script` | Execute scripts from a skill directory |
-| `find_skills` | Search and list available skills |
+| `get_available_skills` | Get available skills |
 
 ### Skill Discovery
 
@@ -119,7 +119,7 @@ This means skills become part of the persistent conversation context and remain 
 
 ### Session Initialization
 
-On session start, the plugin automatically injects a list of all discovered skills wrapped in `<available-skills>` tags. This allows the agent to know what skills are available without needing to call `find_skills` first.
+On session start, the plugin automatically injects a list of all discovered skills wrapped in `<available-skills>` tags. This allows the agent to know what skills are available without needing to call `get_available_skills` first.
 
 ### Superpowers Mode (optional)
 

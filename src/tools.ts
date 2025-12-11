@@ -2,7 +2,7 @@
  * OpenCode Agent Skills - Tool Definitions
  *
  * Factory functions that create the 4 skill tools with injected dependencies:
- * - FindSkills: List available skills with optional filtering
+ * - GetAvailableSkills: Get available skills with optional filtering
  * - ReadSkillFile: Read supporting files from skill directories
  * - RunSkillScript: Execute scripts from skill directories
  * - UseSkill: Load a skill's SKILL.md into context
@@ -26,9 +26,9 @@ import {
   listSkillFiles,
 } from "./skills";
 
-export const FindSkills = (directory: string) => {
+export const GetAvailableSkills = (directory: string) => {
   return tool({
-    description: "List available skills with their descriptions. Optionally filter by query.",
+    description: "Get available skills with their descriptions. Optionally filter by query.",
     args: {
       query: tool.schema.string().optional()
         .describe("Search query to filter skills (matches name and description)")
@@ -94,7 +94,7 @@ export const ReadSkillFile = (directory: string, client: OpencodeClient) => {
           return `Skill "${args.skill}" not found. Did you mean "${suggestion}"?`;
         }
 
-        return `Skill "${args.skill}" not found. Use find_skills to list available skills.`;
+        return `Skill "${args.skill}" not found. Use get_available_skills to list available skills.`;
       }
 
       // Security: ensure path doesn't escape skill directory
@@ -159,7 +159,7 @@ export const RunSkillScript = (directory: string, $: PluginInput["$"]) => {
           return `Skill "${args.skill}" not found. Did you mean "${suggestion}"?`;
         }
 
-        return `Skill "${args.skill}" not found. Use find_skills to list available skills.`;
+        return `Skill "${args.skill}" not found. Use get_available_skills to list available skills.`;
       }
 
       const script = skill.scripts.find(s => s.relativePath === args.script);
@@ -218,7 +218,7 @@ export const UseSkill = (directory: string, client: OpencodeClient) => {
           return `Skill "${args.skill}" not found. Did you mean "${suggestion}"?`;
         }
 
-        return `Skill "${args.skill}" not found. Use find_skills to list available skills.`;
+        return `Skill "${args.skill}" not found. Use get_available_skills to list available skills.`;
       }
 
       const skillFiles = await listSkillFiles(skill.path);

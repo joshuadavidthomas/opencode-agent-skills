@@ -357,7 +357,7 @@ export async function injectSkillsList(
     client,
     sessionID,
     `<available-skills>
-Use the use_skill, read_skill_file, run_skill_script, and find_skills tools to work with skills.
+Use the use_skill, read_skill_file, run_skill_script, and get_available_skills tools to work with skills.
 
 ${skillsList}
 </available-skills>`,

@@ -5,7 +5,7 @@
  * - use_skill: Load a skill's SKILL.md into context
  * - read_skill_file: Read supporting files from a skill directory
  * - run_skill_script: Execute scripts from a skill directory
- * - find_skills: Search and list available skills
+ * - get_available_skills: Get available skills
  *
  * Skills are discovered from multiple locations (project > user > marketplace)
  * and validated against the Anthropic Agent Skills Spec.
@@ -15,7 +15,7 @@ import type { Plugin } from "@opencode-ai/plugin";
 import { maybeInjectSuperpowersBootstrap } from "./superpowers";
 import { getSessionContext, type SessionContext } from "./utils";
 import { injectSkillsList } from "./skills";
-import { FindSkills, ReadSkillFile, RunSkillScript, UseSkill } from "./tools";
+import { GetAvailableSkills, ReadSkillFile, RunSkillScript, UseSkill } from "./tools";
 
 export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
   const injectedSessions = new Set<string>();
@@ -66,7 +66,7 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
     },
 
     tool: {
-      find_skills: FindSkills(directory),
+      get_available_skills: GetAvailableSkills(directory),
       read_skill_file: ReadSkillFile(directory, client),
       run_skill_script: RunSkillScript(directory, $),
       use_skill: UseSkill(directory, client),
