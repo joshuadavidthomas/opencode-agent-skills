@@ -75,12 +75,10 @@ async function findScripts(skillPath: string, maxDepth: number = 10): Promise<Sc
 
         let stats;
         try {
-          stats = await fs.lstat(fullPath);
+          stats = await fs.stat(fullPath);
         } catch {
           continue;
         }
-
-        if (stats.isSymbolicLink()) continue;
 
         if (stats.isDirectory()) {
           await recurse(fullPath, depth + 1, newRelPath);
@@ -211,12 +209,11 @@ export async function findSkillsRecursive(
 
         let stats;
         try {
-          stats = await fs.lstat(fullPath);
+          stats = await fs.stat(fullPath);
         } catch {
           continue;
         }
 
-        if (stats.isSymbolicLink()) continue;
         if (!stats.isDirectory()) continue;
 
         const newRelPath = relPath ? `${relPath}/${entry.name}` : entry.name;
@@ -322,8 +319,7 @@ export async function listSkillFiles(skillPath: string, maxDepth: number = 3): P
         const newRelPath = relPath ? `${relPath}/${entry.name}` : entry.name;
 
         try {
-          const stats = await fs.lstat(fullPath);
-          if (stats.isSymbolicLink()) continue;
+          const stats = await fs.stat(fullPath);
           if (stats.isDirectory()) {
             await recurse(fullPath, depth + 1, newRelPath);
           } else if (stats.isFile() && entry.name !== 'SKILL.md') {
