@@ -27,16 +27,25 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
       // Skip if already injected this session (in-memory fast path)
       if (injectedSessions.has(sessionID)) return;
 
-      // Check if session already has messages (handles plugin reload/reconnection)
+      // Check if skills content was already injected (handles plugin reload/reconnection)
       try {
         const existing = await client.session.messages({
           path: { id: sessionID },
-          query: { limit: 1 }
         });
 
-        if (existing.data && existing.data.length > 0) {
-          injectedSessions.add(sessionID);
-          return;
+        if (existing.data) {
+          const hasSkillsContent = existing.data.some(msg => {
+            const parts = (msg as any).parts || (msg.info as any).parts;
+            if (!parts) return false;
+            return parts.some((part: any) =>
+              part.type === 'text' && part.text?.includes('<available-skills>')
+            );
+          });
+
+          if (hasSkillsContent) {
+            injectedSessions.add(sessionID);
+            return;
+          }
         }
       } catch {
         // On error, proceed with injection
