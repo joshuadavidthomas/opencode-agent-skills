@@ -3,9 +3,12 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { homedir } from "node:os";
 import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
+import type { SkillSummary } from "./skills";
 
 const MODEL_NAME = "Xenova/all-MiniLM-L6-v2";
 const QUANTIZATION = "q8";
+const SIMILARITY_THRESHOLD = 0.30;
+const TOP_K = 5;
 
 let model: FeatureExtractionPipeline | null = null;
 let modelPromise: Promise<void> | null = null;
@@ -86,18 +89,14 @@ export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// --- Skill Matching ---
-
-import type { SkillSummary } from "./skills";
-
 /**
  * Precompute embeddings for all skills at plugin startup.
  * Embeddings are cached to disk, so this warms the cache.
  */
 export async function precomputeSkillEmbeddings(skills: SkillSummary[]): Promise<void> {
   await Promise.all(
-    skills.map(skill => 
-      getEmbedding(skill.description).catch(() => {})
+    skills.map(skill =>
+      getEmbedding(skill.description).catch(() => { })
     )
   );
 }
@@ -109,15 +108,15 @@ export async function precomputeSkillEmbeddings(skills: SkillSummary[]): Promise
 export async function matchSkills(
   userMessage: string,
   availableSkills: SkillSummary[],
-  topK: number = 5,
-  threshold: number = 0.30
+  topK: number = TOP_K,
+  threshold: number = SIMILARITY_THRESHOLD
 ): Promise<SkillSummary[]> {
   if (availableSkills.length === 0) {
     return [];
   }
 
   const queryEmbedding = await getEmbedding(userMessage);
-  
+
   const scored = await Promise.all(
     availableSkills.map(async (skill) => ({
       skill,
@@ -127,7 +126,7 @@ export async function matchSkills(
       ),
     }))
   );
-  
+
   return scored
     .filter(s => s.score >= threshold)
     .sort((a, b) => b.score - a.score)
