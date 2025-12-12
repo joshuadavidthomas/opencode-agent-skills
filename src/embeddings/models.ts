@@ -18,6 +18,8 @@ export interface ModelConfig {
   maxTokens: number;
   /** Quantization setting for model weights */
   quantization: "fp32" | "fp16" | "q8";
+  /** Approximate model size in MB (with q8 quantization) */
+  sizeMB: number;
 }
 
 /**
@@ -34,30 +36,35 @@ export const MODELS: Record<string, ModelConfig> = {
     dimensions: 384,
     maxTokens: 128,
     quantization: "q8",
+    sizeMB: 17.4,
   },
   "all-MiniLM-L6-v2": {
     name: "Xenova/all-MiniLM-L6-v2",
     dimensions: 384,
     maxTokens: 256,
     quantization: "q8",
+    sizeMB: 22.8,
   },
   "all-MiniLM-L12-v2": {
     name: "Xenova/all-MiniLM-L12-v2",
     dimensions: 384,
     maxTokens: 256,
     quantization: "q8",
+    sizeMB: 33.8,
   },
   "all-mpnet-base-v2": {
     name: "Xenova/all-mpnet-base-v2",
     dimensions: 768,
     maxTokens: 384,
     quantization: "q8",
+    sizeMB: 110,
   },
   "bge-small-en-v1.5": {
     name: "Xenova/bge-small-en-v1.5",
     dimensions: 384,
     maxTokens: 512,
     quantization: "q8",
+    sizeMB: 33.8,
   },
 };
 

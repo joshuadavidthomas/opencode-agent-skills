@@ -1,0 +1,1125 @@
+{
+  "testCases": [
+    {
+      "query": "help me write git commit messages",
+      "expected": [
+        "git-helper"
+      ]
+    },
+    {
+      "query": "create a web prototype",
+      "expected": [
+        "prototyping"
+      ]
+    },
+    {
+      "query": "refactor my code to reduce complexity",
+      "expected": [
+        "reducing-entropy"
+      ]
+    },
+    {
+      "query": "write documentation for my API",
+      "expected": [
+        "crafting-effective-readmes",
+        "docx",
+        "writing-clearly-and-concisely"
+      ]
+    },
+    {
+      "query": "create an MCP server for GitHub",
+      "expected": [
+        "mcp-builder"
+      ]
+    },
+    {
+      "query": "analyze this codebase structure",
+      "expected": [
+        "researching-codebases"
+      ]
+    },
+    {
+      "query": "create a spreadsheet with formulas",
+      "expected": [
+        "xlsx"
+      ]
+    },
+    {
+      "query": "help me brainstorm some ideas",
+      "expected": [
+        "brainstorming"
+      ]
+    },
+    {
+      "query": "review my pull request",
+      "expected": [
+        "reviewing-changes"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "modelName": "paraphrase-MiniLM-L3-v2",
+      "query": "help me write git commit messages",
+      "topMatch": "git-helper",
+      "topScore": 0.7097875812307738,
+      "secondMatch": "using-git-worktrees",
+      "secondScore": 0.4420248295874662,
+      "scoreGap": 0.2677627516433076,
+      "latencyMs": 102.344064,
+      "isCorrect": true
+    },
+    {
+      "modelName": "paraphrase-MiniLM-L3-v2",
+      "query": "create a web prototype",
+      "topMatch": "prototyping",
+      "topScore": 0.6074316639523455,
+      "secondMatch": "frontend-design",
+      "secondScore": 0.46944080732119003,
+      "scoreGap": 0.13799085663115546,
+      "latencyMs": 63.885834999999986,
+      "isCorrect": true
+    },
+    {
+      "modelName": "paraphrase-MiniLM-L3-v2",
+      "query": "refactor my code to reduce complexity",
+      "topMatch": "reducing-entropy",
+      "topScore": 0.44099488073923176,
+      "secondMatch": "researching-codebases",
+      "secondScore": 0.40055670228849893,
+      "scoreGap": 0.04043817845073283,
+      "latencyMs": 57.56354399999998,
+      "isCorrect": true
+    },
+    {
+      "modelName": "paraphrase-MiniLM-L3-v2",
+      "query": "write documentation for my API",
+      "topMatch": "frontend-design",
+      "topScore": 0.3031793951608216,
+      "secondMatch": "writing-clearly-and-concisely",
+      "secondScore": 0.3021837021374759,
+      "scoreGap": 0.0009956930233456784,
+      "latencyMs": 59.03585700000002,
+      "isCorrect": false
+    },
+    {
+      "modelName": "paraphrase-MiniLM-L3-v2",
+      "query": "create an MCP server for GitHub",
+      "topMatch": "git-helper",
+      "topScore": 0.5254065150157627,
+      "secondMatch": "mcp-builder",
+      "secondScore": 0.5101156921175195,
+      "scoreGap": 0.01529082289824324,
+      "latencyMs": 62.27529099999998,
+      "isCorrect": false
+    },
+    {
+      "modelName": "paraphrase-MiniLM-L3-v2",
+      "query": "analyze this codebase structure",
+      "topMatch": "researching-codebases",
+      "topScore": 0.5944684314378369,
+      "secondMatch": "reducing-entropy",
+      "secondScore": 0.4075455675679953,
+      "scoreGap": 0.18692286386984158,
+      "latencyMs": 61.027423,
+      "isCorrect": true
+    },
+    {
+      "modelName": "paraphrase-MiniLM-L3-v2",
+      "query": "create a spreadsheet with formulas",
+      "topMatch": "xlsx",
+      "topScore": 0.6844586536988669,
+      "secondMatch": "pdf",
+      "secondScore": 0.4290819948359219,
+      "scoreGap": 0.255376658862945,
+      "latencyMs": 52.984228999999914,
+      "isCorrect": true
+    },
+    {
+      "modelName": "paraphrase-MiniLM-L3-v2",
+      "query": "help me brainstorm some ideas",
+      "topMatch": "brainstorming",
+      "topScore": 0.6772434267523652,
+      "secondMatch": "prototyping",
+      "secondScore": 0.33765323910120026,
+      "scoreGap": 0.3395901876511649,
+      "latencyMs": 56.80811100000005,
+      "isCorrect": true
+    },
+    {
+      "modelName": "paraphrase-MiniLM-L3-v2",
+      "query": "review my pull request",
+      "topMatch": "git-helper",
+      "topScore": 0.2232294152918245,
+      "secondMatch": "sveltekit-data-flow",
+      "secondScore": 0.20838954476971328,
+      "scoreGap": 0.01483987052211122,
+      "latencyMs": 60.1526540000001,
+      "isCorrect": false
+    },
+    {
+      "modelName": "all-MiniLM-L6-v2",
+      "query": "help me write git commit messages",
+      "topMatch": "git-helper",
+      "topScore": 0.6049101209806818,
+      "secondMatch": "using-git-worktrees",
+      "secondScore": 0.29926968222311245,
+      "scoreGap": 0.3056404387575693,
+      "latencyMs": 87.80179399999997,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L6-v2",
+      "query": "create a web prototype",
+      "topMatch": "prototyping",
+      "topScore": 0.6462490035580843,
+      "secondMatch": "frontend-design",
+      "secondScore": 0.4023871771618277,
+      "scoreGap": 0.24386182639625664,
+      "latencyMs": 69.84409500000004,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L6-v2",
+      "query": "refactor my code to reduce complexity",
+      "topMatch": "reducing-entropy",
+      "topScore": 0.4229922282659433,
+      "secondMatch": "researching-codebases",
+      "secondScore": 0.23745835737518603,
+      "scoreGap": 0.18553387089075726,
+      "latencyMs": 74.25659400000006,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L6-v2",
+      "query": "write documentation for my API",
+      "topMatch": "writing-clearly-and-concisely",
+      "topScore": 0.40912550651767216,
+      "secondMatch": "crafting-effective-readmes",
+      "secondScore": 0.38998850968899906,
+      "scoreGap": 0.019136996828673092,
+      "latencyMs": 72.4617189999999,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L6-v2",
+      "query": "create an MCP server for GitHub",
+      "topMatch": "mcp-builder",
+      "topScore": 0.5066775494579123,
+      "secondMatch": "git-helper",
+      "secondScore": 0.3749213520937544,
+      "scoreGap": 0.13175619736415795,
+      "latencyMs": 73.21323499999994,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L6-v2",
+      "query": "analyze this codebase structure",
+      "topMatch": "researching-codebases",
+      "topScore": 0.5435424445253098,
+      "secondMatch": "reducing-entropy",
+      "secondScore": 0.37313693485524574,
+      "scoreGap": 0.17040550967006401,
+      "latencyMs": 75.72759399999995,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L6-v2",
+      "query": "create a spreadsheet with formulas",
+      "topMatch": "xlsx",
+      "topScore": 0.5382373432687726,
+      "secondMatch": "writing-utility-scripts",
+      "secondScore": 0.18803742141762012,
+      "scoreGap": 0.35019992185115245,
+      "latencyMs": 82.70328300000006,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L6-v2",
+      "query": "help me brainstorm some ideas",
+      "topMatch": "brainstorming",
+      "topScore": 0.5062604952537121,
+      "secondMatch": "researching-codebases",
+      "secondScore": 0.31836470303959,
+      "scoreGap": 0.18789579221412206,
+      "latencyMs": 93.43905500000005,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L6-v2",
+      "query": "review my pull request",
+      "topMatch": "reviewing-changes",
+      "topScore": 0.3897314915923012,
+      "secondMatch": "git-helper",
+      "secondScore": 0.27422500396647237,
+      "scoreGap": 0.11550648762582882,
+      "latencyMs": 72.272962,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L12-v2",
+      "query": "help me write git commit messages",
+      "topMatch": "git-helper",
+      "topScore": 0.5823113006923675,
+      "secondMatch": "writing-clearly-and-concisely",
+      "secondScore": 0.34075589465993533,
+      "scoreGap": 0.24155540603243214,
+      "latencyMs": 106.7931309999999,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L12-v2",
+      "query": "create a web prototype",
+      "topMatch": "prototyping",
+      "topScore": 0.5865369070936964,
+      "secondMatch": "frontend-design",
+      "secondScore": 0.346514573356734,
+      "scoreGap": 0.2400223337369624,
+      "latencyMs": 115.06201399999986,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L12-v2",
+      "query": "refactor my code to reduce complexity",
+      "topMatch": "reducing-entropy",
+      "topScore": 0.29229184289854254,
+      "secondMatch": "researching-codebases",
+      "secondScore": 0.2376955481164922,
+      "scoreGap": 0.05459629478205033,
+      "latencyMs": 117.37432899999999,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L12-v2",
+      "query": "write documentation for my API",
+      "topMatch": "writing-clearly-and-concisely",
+      "topScore": 0.4039672705354869,
+      "secondMatch": "writing-utility-scripts",
+      "secondScore": 0.31799711618560367,
+      "scoreGap": 0.08597015434988325,
+      "latencyMs": 128.32133099999987,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L12-v2",
+      "query": "create an MCP server for GitHub",
+      "topMatch": "mcp-builder",
+      "topScore": 0.4919214019290465,
+      "secondMatch": "git-helper",
+      "secondScore": 0.4006531455837767,
+      "scoreGap": 0.0912682563452698,
+      "latencyMs": 132.88118899999995,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L12-v2",
+      "query": "analyze this codebase structure",
+      "topMatch": "researching-codebases",
+      "topScore": 0.5837265891393798,
+      "secondMatch": "bd-issue-tracking",
+      "secondScore": 0.24842312348414253,
+      "scoreGap": 0.3353034656552373,
+      "latencyMs": 148.02182500000004,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L12-v2",
+      "query": "create a spreadsheet with formulas",
+      "topMatch": "xlsx",
+      "topScore": 0.4999146608983331,
+      "secondMatch": "pptx",
+      "secondScore": 0.17235751008895475,
+      "scoreGap": 0.3275571508093783,
+      "latencyMs": 118.53829700000006,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L12-v2",
+      "query": "help me brainstorm some ideas",
+      "topMatch": "brainstorming",
+      "topScore": 0.3993190270294832,
+      "secondMatch": "prototyping",
+      "secondScore": 0.31303045640159954,
+      "scoreGap": 0.08628857062788364,
+      "latencyMs": 111.82841099999996,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-MiniLM-L12-v2",
+      "query": "review my pull request",
+      "topMatch": "reviewing-changes",
+      "topScore": 0.30237975899357905,
+      "secondMatch": "git-helper",
+      "secondScore": 0.28146329828331257,
+      "scoreGap": 0.020916460710266482,
+      "latencyMs": 113.57857999999987,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-mpnet-base-v2",
+      "query": "help me write git commit messages",
+      "topMatch": "git-helper",
+      "topScore": 0.5969560041221647,
+      "secondMatch": "writing-clearly-and-concisely",
+      "secondScore": 0.38273900511841147,
+      "scoreGap": 0.21421699900375318,
+      "latencyMs": 208.15830700000015,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-mpnet-base-v2",
+      "query": "create a web prototype",
+      "topMatch": "prototyping",
+      "topScore": 0.4946038326082602,
+      "secondMatch": "frontend-design",
+      "secondScore": 0.38259815000460046,
+      "scoreGap": 0.11200568260365973,
+      "latencyMs": 239.57270599999993,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-mpnet-base-v2",
+      "query": "refactor my code to reduce complexity",
+      "topMatch": "reducing-entropy",
+      "topScore": 0.4004516890729952,
+      "secondMatch": "reviewing-changes",
+      "secondScore": 0.2600321545998102,
+      "scoreGap": 0.140419534473185,
+      "latencyMs": 282.79308600000013,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-mpnet-base-v2",
+      "query": "write documentation for my API",
+      "topMatch": "crafting-effective-readmes",
+      "topScore": 0.3291780346072392,
+      "secondMatch": "writing-clearly-and-concisely",
+      "secondScore": 0.328611368163963,
+      "scoreGap": 0.000566666443276187,
+      "latencyMs": 206.63527799999974,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-mpnet-base-v2",
+      "query": "create an MCP server for GitHub",
+      "topMatch": "git-helper",
+      "topScore": 0.47875004550270595,
+      "secondMatch": "mcp-builder",
+      "secondScore": 0.3729596927180396,
+      "scoreGap": 0.10579035278466636,
+      "latencyMs": 204.03496700000005,
+      "isCorrect": false
+    },
+    {
+      "modelName": "all-mpnet-base-v2",
+      "query": "analyze this codebase structure",
+      "topMatch": "researching-codebases",
+      "topScore": 0.5659448574168012,
+      "secondMatch": "sveltekit-structure",
+      "secondScore": 0.4376032567039394,
+      "scoreGap": 0.12834160071286183,
+      "latencyMs": 214.82884600000034,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-mpnet-base-v2",
+      "query": "create a spreadsheet with formulas",
+      "topMatch": "xlsx",
+      "topScore": 0.5434123086391033,
+      "secondMatch": "docx",
+      "secondScore": 0.28045403806299096,
+      "scoreGap": 0.2629582705761123,
+      "latencyMs": 215.68952900000022,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-mpnet-base-v2",
+      "query": "help me brainstorm some ideas",
+      "topMatch": "brainstorming",
+      "topScore": 0.3873922173288043,
+      "secondMatch": "prototyping",
+      "secondScore": 0.3063149597678368,
+      "scoreGap": 0.08107725756096751,
+      "latencyMs": 236.89514699999972,
+      "isCorrect": true
+    },
+    {
+      "modelName": "all-mpnet-base-v2",
+      "query": "review my pull request",
+      "topMatch": "reviewing-changes",
+      "topScore": 0.4506709472617341,
+      "secondMatch": "git-helper",
+      "secondScore": 0.38588123163230403,
+      "scoreGap": 0.06478971562943009,
+      "latencyMs": 302.31789500000014,
+      "isCorrect": true
+    },
+    {
+      "modelName": "bge-small-en-v1.5",
+      "query": "help me write git commit messages",
+      "topMatch": "git-helper",
+      "topScore": 0.7579616894830489,
+      "secondMatch": "using-git-worktrees",
+      "secondScore": 0.6045005649917304,
+      "scoreGap": 0.15346112449131843,
+      "latencyMs": 127.77124599999934,
+      "isCorrect": true
+    },
+    {
+      "modelName": "bge-small-en-v1.5",
+      "query": "create a web prototype",
+      "topMatch": "prototyping",
+      "topScore": 0.7752483435324551,
+      "secondMatch": "frontend-design",
+      "secondScore": 0.6004702983187644,
+      "scoreGap": 0.17477804521369067,
+      "latencyMs": 124.73228199999994,
+      "isCorrect": true
+    },
+    {
+      "modelName": "bge-small-en-v1.5",
+      "query": "refactor my code to reduce complexity",
+      "topMatch": "reducing-entropy",
+      "topScore": 0.6357439596760115,
+      "secondMatch": "brainstorming",
+      "secondScore": 0.6042056747329814,
+      "scoreGap": 0.031538284943030126,
+      "latencyMs": 123.0127509999993,
+      "isCorrect": true
+    },
+    {
+      "modelName": "bge-small-en-v1.5",
+      "query": "write documentation for my API",
+      "topMatch": "docx",
+      "topScore": 0.5606240254546787,
+      "secondMatch": "writing-utility-scripts",
+      "secondScore": 0.5490629914779136,
+      "scoreGap": 0.011561033976765112,
+      "latencyMs": 120.28421600000001,
+      "isCorrect": true
+    },
+    {
+      "modelName": "bge-small-en-v1.5",
+      "query": "create an MCP server for GitHub",
+      "topMatch": "mcp-builder",
+      "topScore": 0.673601479117184,
+      "secondMatch": "git-helper",
+      "secondScore": 0.6554117509772169,
+      "scoreGap": 0.01818972813996711,
+      "latencyMs": 126.69194799999968,
+      "isCorrect": true
+    },
+    {
+      "modelName": "bge-small-en-v1.5",
+      "query": "analyze this codebase structure",
+      "topMatch": "researching-codebases",
+      "topScore": 0.7445303939109004,
+      "secondMatch": "reducing-entropy",
+      "secondScore": 0.6097891579116312,
+      "scoreGap": 0.13474123599926913,
+      "latencyMs": 160.76633299999958,
+      "isCorrect": true
+    },
+    {
+      "modelName": "bge-small-en-v1.5",
+      "query": "create a spreadsheet with formulas",
+      "topMatch": "xlsx",
+      "topScore": 0.7338975199344883,
+      "secondMatch": "pptx",
+      "secondScore": 0.5777066154113989,
+      "scoreGap": 0.15619090452308937,
+      "latencyMs": 127.59635399999934,
+      "isCorrect": true
+    },
+    {
+      "modelName": "bge-small-en-v1.5",
+      "query": "help me brainstorm some ideas",
+      "topMatch": "brainstorming",
+      "topScore": 0.613071134481121,
+      "secondMatch": "improving-prompts",
+      "secondScore": 0.5412816186710134,
+      "scoreGap": 0.07178951581010762,
+      "latencyMs": 117.89778999999999,
+      "isCorrect": true
+    },
+    {
+      "modelName": "bge-small-en-v1.5",
+      "query": "review my pull request",
+      "topMatch": "git-helper",
+      "topScore": 0.5872911677958483,
+      "secondMatch": "reviewing-changes",
+      "secondScore": 0.5723199589143861,
+      "scoreGap": 0.014971208881462195,
+      "latencyMs": 124.94355200000064,
+      "isCorrect": false
+    }
+  ],
+  "summaries": [
+    {
+      "modelName": "paraphrase-MiniLM-L3-v2",
+      "totalQueries": 9,
+      "correctAnswers": 6,
+      "accuracy": 0.6666666666666666,
+      "avgScore": 0.5295777736977587,
+      "avgLatency": 64.00855644444445,
+      "avgScoreGap": 0.1399119870614275,
+      "sizeMB": 17.4,
+      "efficiency": 5.51569772454198,
+      "sizeAwareEfficiency": 1.3222873205021592,
+      "results": [
+        {
+          "modelName": "paraphrase-MiniLM-L3-v2",
+          "query": "help me write git commit messages",
+          "topMatch": "git-helper",
+          "topScore": 0.7097875812307738,
+          "secondMatch": "using-git-worktrees",
+          "secondScore": 0.4420248295874662,
+          "scoreGap": 0.2677627516433076,
+          "latencyMs": 102.344064,
+          "isCorrect": true
+        },
+        {
+          "modelName": "paraphrase-MiniLM-L3-v2",
+          "query": "create a web prototype",
+          "topMatch": "prototyping",
+          "topScore": 0.6074316639523455,
+          "secondMatch": "frontend-design",
+          "secondScore": 0.46944080732119003,
+          "scoreGap": 0.13799085663115546,
+          "latencyMs": 63.885834999999986,
+          "isCorrect": true
+        },
+        {
+          "modelName": "paraphrase-MiniLM-L3-v2",
+          "query": "refactor my code to reduce complexity",
+          "topMatch": "reducing-entropy",
+          "topScore": 0.44099488073923176,
+          "secondMatch": "researching-codebases",
+          "secondScore": 0.40055670228849893,
+          "scoreGap": 0.04043817845073283,
+          "latencyMs": 57.56354399999998,
+          "isCorrect": true
+        },
+        {
+          "modelName": "paraphrase-MiniLM-L3-v2",
+          "query": "write documentation for my API",
+          "topMatch": "frontend-design",
+          "topScore": 0.3031793951608216,
+          "secondMatch": "writing-clearly-and-concisely",
+          "secondScore": 0.3021837021374759,
+          "scoreGap": 0.0009956930233456784,
+          "latencyMs": 59.03585700000002,
+          "isCorrect": false
+        },
+        {
+          "modelName": "paraphrase-MiniLM-L3-v2",
+          "query": "create an MCP server for GitHub",
+          "topMatch": "git-helper",
+          "topScore": 0.5254065150157627,
+          "secondMatch": "mcp-builder",
+          "secondScore": 0.5101156921175195,
+          "scoreGap": 0.01529082289824324,
+          "latencyMs": 62.27529099999998,
+          "isCorrect": false
+        },
+        {
+          "modelName": "paraphrase-MiniLM-L3-v2",
+          "query": "analyze this codebase structure",
+          "topMatch": "researching-codebases",
+          "topScore": 0.5944684314378369,
+          "secondMatch": "reducing-entropy",
+          "secondScore": 0.4075455675679953,
+          "scoreGap": 0.18692286386984158,
+          "latencyMs": 61.027423,
+          "isCorrect": true
+        },
+        {
+          "modelName": "paraphrase-MiniLM-L3-v2",
+          "query": "create a spreadsheet with formulas",
+          "topMatch": "xlsx",
+          "topScore": 0.6844586536988669,
+          "secondMatch": "pdf",
+          "secondScore": 0.4290819948359219,
+          "scoreGap": 0.255376658862945,
+          "latencyMs": 52.984228999999914,
+          "isCorrect": true
+        },
+        {
+          "modelName": "paraphrase-MiniLM-L3-v2",
+          "query": "help me brainstorm some ideas",
+          "topMatch": "brainstorming",
+          "topScore": 0.6772434267523652,
+          "secondMatch": "prototyping",
+          "secondScore": 0.33765323910120026,
+          "scoreGap": 0.3395901876511649,
+          "latencyMs": 56.80811100000005,
+          "isCorrect": true
+        },
+        {
+          "modelName": "paraphrase-MiniLM-L3-v2",
+          "query": "review my pull request",
+          "topMatch": "git-helper",
+          "topScore": 0.2232294152918245,
+          "secondMatch": "sveltekit-data-flow",
+          "secondScore": 0.20838954476971328,
+          "scoreGap": 0.01483987052211122,
+          "latencyMs": 60.1526540000001,
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "modelName": "all-MiniLM-L6-v2",
+      "totalQueries": 9,
+      "correctAnswers": 9,
+      "accuracy": 1,
+      "avgScore": 0.5075251314911544,
+      "avgLatency": 77.96892566666666,
+      "avgScoreGap": 0.18999300462206462,
+      "sizeMB": 22.8,
+      "efficiency": 6.509325698047061,
+      "sizeAwareEfficiency": 1.3632282544852903,
+      "results": [
+        {
+          "modelName": "all-MiniLM-L6-v2",
+          "query": "help me write git commit messages",
+          "topMatch": "git-helper",
+          "topScore": 0.6049101209806818,
+          "secondMatch": "using-git-worktrees",
+          "secondScore": 0.29926968222311245,
+          "scoreGap": 0.3056404387575693,
+          "latencyMs": 87.80179399999997,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L6-v2",
+          "query": "create a web prototype",
+          "topMatch": "prototyping",
+          "topScore": 0.6462490035580843,
+          "secondMatch": "frontend-design",
+          "secondScore": 0.4023871771618277,
+          "scoreGap": 0.24386182639625664,
+          "latencyMs": 69.84409500000004,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L6-v2",
+          "query": "refactor my code to reduce complexity",
+          "topMatch": "reducing-entropy",
+          "topScore": 0.4229922282659433,
+          "secondMatch": "researching-codebases",
+          "secondScore": 0.23745835737518603,
+          "scoreGap": 0.18553387089075726,
+          "latencyMs": 74.25659400000006,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L6-v2",
+          "query": "write documentation for my API",
+          "topMatch": "writing-clearly-and-concisely",
+          "topScore": 0.40912550651767216,
+          "secondMatch": "crafting-effective-readmes",
+          "secondScore": 0.38998850968899906,
+          "scoreGap": 0.019136996828673092,
+          "latencyMs": 72.4617189999999,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L6-v2",
+          "query": "create an MCP server for GitHub",
+          "topMatch": "mcp-builder",
+          "topScore": 0.5066775494579123,
+          "secondMatch": "git-helper",
+          "secondScore": 0.3749213520937544,
+          "scoreGap": 0.13175619736415795,
+          "latencyMs": 73.21323499999994,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L6-v2",
+          "query": "analyze this codebase structure",
+          "topMatch": "researching-codebases",
+          "topScore": 0.5435424445253098,
+          "secondMatch": "reducing-entropy",
+          "secondScore": 0.37313693485524574,
+          "scoreGap": 0.17040550967006401,
+          "latencyMs": 75.72759399999995,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L6-v2",
+          "query": "create a spreadsheet with formulas",
+          "topMatch": "xlsx",
+          "topScore": 0.5382373432687726,
+          "secondMatch": "writing-utility-scripts",
+          "secondScore": 0.18803742141762012,
+          "scoreGap": 0.35019992185115245,
+          "latencyMs": 82.70328300000006,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L6-v2",
+          "query": "help me brainstorm some ideas",
+          "topMatch": "brainstorming",
+          "topScore": 0.5062604952537121,
+          "secondMatch": "researching-codebases",
+          "secondScore": 0.31836470303959,
+          "scoreGap": 0.18789579221412206,
+          "latencyMs": 93.43905500000005,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L6-v2",
+          "query": "review my pull request",
+          "topMatch": "reviewing-changes",
+          "topScore": 0.3897314915923012,
+          "secondMatch": "git-helper",
+          "secondScore": 0.27422500396647237,
+          "scoreGap": 0.11550648762582882,
+          "latencyMs": 72.272962,
+          "isCorrect": true
+        }
+      ]
+    },
+    {
+      "modelName": "all-MiniLM-L12-v2",
+      "totalQueries": 9,
+      "correctAnswers": 9,
+      "accuracy": 1,
+      "avgScore": 0.4602631954677683,
+      "avgLatency": 121.3776785555555,
+      "avgScoreGap": 0.1648308992277071,
+      "sizeMB": 33.8,
+      "efficiency": 3.791992077498024,
+      "sizeAwareEfficiency": 0.652242465802018,
+      "results": [
+        {
+          "modelName": "all-MiniLM-L12-v2",
+          "query": "help me write git commit messages",
+          "topMatch": "git-helper",
+          "topScore": 0.5823113006923675,
+          "secondMatch": "writing-clearly-and-concisely",
+          "secondScore": 0.34075589465993533,
+          "scoreGap": 0.24155540603243214,
+          "latencyMs": 106.7931309999999,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L12-v2",
+          "query": "create a web prototype",
+          "topMatch": "prototyping",
+          "topScore": 0.5865369070936964,
+          "secondMatch": "frontend-design",
+          "secondScore": 0.346514573356734,
+          "scoreGap": 0.2400223337369624,
+          "latencyMs": 115.06201399999986,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L12-v2",
+          "query": "refactor my code to reduce complexity",
+          "topMatch": "reducing-entropy",
+          "topScore": 0.29229184289854254,
+          "secondMatch": "researching-codebases",
+          "secondScore": 0.2376955481164922,
+          "scoreGap": 0.05459629478205033,
+          "latencyMs": 117.37432899999999,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L12-v2",
+          "query": "write documentation for my API",
+          "topMatch": "writing-clearly-and-concisely",
+          "topScore": 0.4039672705354869,
+          "secondMatch": "writing-utility-scripts",
+          "secondScore": 0.31799711618560367,
+          "scoreGap": 0.08597015434988325,
+          "latencyMs": 128.32133099999987,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L12-v2",
+          "query": "create an MCP server for GitHub",
+          "topMatch": "mcp-builder",
+          "topScore": 0.4919214019290465,
+          "secondMatch": "git-helper",
+          "secondScore": 0.4006531455837767,
+          "scoreGap": 0.0912682563452698,
+          "latencyMs": 132.88118899999995,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L12-v2",
+          "query": "analyze this codebase structure",
+          "topMatch": "researching-codebases",
+          "topScore": 0.5837265891393798,
+          "secondMatch": "bd-issue-tracking",
+          "secondScore": 0.24842312348414253,
+          "scoreGap": 0.3353034656552373,
+          "latencyMs": 148.02182500000004,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L12-v2",
+          "query": "create a spreadsheet with formulas",
+          "topMatch": "xlsx",
+          "topScore": 0.4999146608983331,
+          "secondMatch": "pptx",
+          "secondScore": 0.17235751008895475,
+          "scoreGap": 0.3275571508093783,
+          "latencyMs": 118.53829700000006,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L12-v2",
+          "query": "help me brainstorm some ideas",
+          "topMatch": "brainstorming",
+          "topScore": 0.3993190270294832,
+          "secondMatch": "prototyping",
+          "secondScore": 0.31303045640159954,
+          "scoreGap": 0.08628857062788364,
+          "latencyMs": 111.82841099999996,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-MiniLM-L12-v2",
+          "query": "review my pull request",
+          "topMatch": "reviewing-changes",
+          "topScore": 0.30237975899357905,
+          "secondMatch": "git-helper",
+          "secondScore": 0.28146329828331257,
+          "scoreGap": 0.020916460710266482,
+          "latencyMs": 113.57857999999987,
+          "isCorrect": true
+        }
+      ]
+    },
+    {
+      "modelName": "all-mpnet-base-v2",
+      "totalQueries": 9,
+      "correctAnswers": 8,
+      "accuracy": 0.8888888888888888,
+      "avgScore": 0.4719288818399787,
+      "avgLatency": 234.54730677777783,
+      "avgScoreGap": 0.12335178664310137,
+      "sizeMB": 110,
+      "efficiency": 1.7885191059165004,
+      "sizeAwareEfficiency": 0.17052860576423584,
+      "results": [
+        {
+          "modelName": "all-mpnet-base-v2",
+          "query": "help me write git commit messages",
+          "topMatch": "git-helper",
+          "topScore": 0.5969560041221647,
+          "secondMatch": "writing-clearly-and-concisely",
+          "secondScore": 0.38273900511841147,
+          "scoreGap": 0.21421699900375318,
+          "latencyMs": 208.15830700000015,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-mpnet-base-v2",
+          "query": "create a web prototype",
+          "topMatch": "prototyping",
+          "topScore": 0.4946038326082602,
+          "secondMatch": "frontend-design",
+          "secondScore": 0.38259815000460046,
+          "scoreGap": 0.11200568260365973,
+          "latencyMs": 239.57270599999993,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-mpnet-base-v2",
+          "query": "refactor my code to reduce complexity",
+          "topMatch": "reducing-entropy",
+          "topScore": 0.4004516890729952,
+          "secondMatch": "reviewing-changes",
+          "secondScore": 0.2600321545998102,
+          "scoreGap": 0.140419534473185,
+          "latencyMs": 282.79308600000013,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-mpnet-base-v2",
+          "query": "write documentation for my API",
+          "topMatch": "crafting-effective-readmes",
+          "topScore": 0.3291780346072392,
+          "secondMatch": "writing-clearly-and-concisely",
+          "secondScore": 0.328611368163963,
+          "scoreGap": 0.000566666443276187,
+          "latencyMs": 206.63527799999974,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-mpnet-base-v2",
+          "query": "create an MCP server for GitHub",
+          "topMatch": "git-helper",
+          "topScore": 0.47875004550270595,
+          "secondMatch": "mcp-builder",
+          "secondScore": 0.3729596927180396,
+          "scoreGap": 0.10579035278466636,
+          "latencyMs": 204.03496700000005,
+          "isCorrect": false
+        },
+        {
+          "modelName": "all-mpnet-base-v2",
+          "query": "analyze this codebase structure",
+          "topMatch": "researching-codebases",
+          "topScore": 0.5659448574168012,
+          "secondMatch": "sveltekit-structure",
+          "secondScore": 0.4376032567039394,
+          "scoreGap": 0.12834160071286183,
+          "latencyMs": 214.82884600000034,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-mpnet-base-v2",
+          "query": "create a spreadsheet with formulas",
+          "topMatch": "xlsx",
+          "topScore": 0.5434123086391033,
+          "secondMatch": "docx",
+          "secondScore": 0.28045403806299096,
+          "scoreGap": 0.2629582705761123,
+          "latencyMs": 215.68952900000022,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-mpnet-base-v2",
+          "query": "help me brainstorm some ideas",
+          "topMatch": "brainstorming",
+          "topScore": 0.3873922173288043,
+          "secondMatch": "prototyping",
+          "secondScore": 0.3063149597678368,
+          "scoreGap": 0.08107725756096751,
+          "latencyMs": 236.89514699999972,
+          "isCorrect": true
+        },
+        {
+          "modelName": "all-mpnet-base-v2",
+          "query": "review my pull request",
+          "topMatch": "reviewing-changes",
+          "topScore": 0.4506709472617341,
+          "secondMatch": "git-helper",
+          "secondScore": 0.38588123163230403,
+          "scoreGap": 0.06478971562943009,
+          "latencyMs": 302.31789500000014,
+          "isCorrect": true
+        }
+      ]
+    },
+    {
+      "modelName": "bge-small-en-v1.5",
+      "totalQueries": 9,
+      "correctAnswers": 8,
+      "accuracy": 0.8888888888888888,
+      "avgScore": 0.6757744125984152,
+      "avgLatency": 128.18849688888864,
+      "avgScoreGap": 0.0852467868865222,
+      "sizeMB": 33.8,
+      "efficiency": 4.685977145631188,
+      "sizeAwareEfficiency": 0.806012572203213,
+      "results": [
+        {
+          "modelName": "bge-small-en-v1.5",
+          "query": "help me write git commit messages",
+          "topMatch": "git-helper",
+          "topScore": 0.7579616894830489,
+          "secondMatch": "using-git-worktrees",
+          "secondScore": 0.6045005649917304,
+          "scoreGap": 0.15346112449131843,
+          "latencyMs": 127.77124599999934,
+          "isCorrect": true
+        },
+        {
+          "modelName": "bge-small-en-v1.5",
+          "query": "create a web prototype",
+          "topMatch": "prototyping",
+          "topScore": 0.7752483435324551,
+          "secondMatch": "frontend-design",
+          "secondScore": 0.6004702983187644,
+          "scoreGap": 0.17477804521369067,
+          "latencyMs": 124.73228199999994,
+          "isCorrect": true
+        },
+        {
+          "modelName": "bge-small-en-v1.5",
+          "query": "refactor my code to reduce complexity",
+          "topMatch": "reducing-entropy",
+          "topScore": 0.6357439596760115,
+          "secondMatch": "brainstorming",
+          "secondScore": 0.6042056747329814,
+          "scoreGap": 0.031538284943030126,
+          "latencyMs": 123.0127509999993,
+          "isCorrect": true
+        },
+        {
+          "modelName": "bge-small-en-v1.5",
+          "query": "write documentation for my API",
+          "topMatch": "docx",
+          "topScore": 0.5606240254546787,
+          "secondMatch": "writing-utility-scripts",
+          "secondScore": 0.5490629914779136,
+          "scoreGap": 0.011561033976765112,
+          "latencyMs": 120.28421600000001,
+          "isCorrect": true
+        },
+        {
+          "modelName": "bge-small-en-v1.5",
+          "query": "create an MCP server for GitHub",
+          "topMatch": "mcp-builder",
+          "topScore": 0.673601479117184,
+          "secondMatch": "git-helper",
+          "secondScore": 0.6554117509772169,
+          "scoreGap": 0.01818972813996711,
+          "latencyMs": 126.69194799999968,
+          "isCorrect": true
+        },
+        {
+          "modelName": "bge-small-en-v1.5",
+          "query": "analyze this codebase structure",
+          "topMatch": "researching-codebases",
+          "topScore": 0.7445303939109004,
+          "secondMatch": "reducing-entropy",
+          "secondScore": 0.6097891579116312,
+          "scoreGap": 0.13474123599926913,
+          "latencyMs": 160.76633299999958,
+          "isCorrect": true
+        },
+        {
+          "modelName": "bge-small-en-v1.5",
+          "query": "create a spreadsheet with formulas",
+          "topMatch": "xlsx",
+          "topScore": 0.7338975199344883,
+          "secondMatch": "pptx",
+          "secondScore": 0.5777066154113989,
+          "scoreGap": 0.15619090452308937,
+          "latencyMs": 127.59635399999934,
+          "isCorrect": true
+        },
+        {
+          "modelName": "bge-small-en-v1.5",
+          "query": "help me brainstorm some ideas",
+          "topMatch": "brainstorming",
+          "topScore": 0.613071134481121,
+          "secondMatch": "improving-prompts",
+          "secondScore": 0.5412816186710134,
+          "scoreGap": 0.07178951581010762,
+          "latencyMs": 117.89778999999999,
+          "isCorrect": true
+        },
+        {
+          "modelName": "bge-small-en-v1.5",
+          "query": "review my pull request",
+          "topMatch": "git-helper",
+          "topScore": 0.5872911677958483,
+          "secondMatch": "reviewing-changes",
+          "secondScore": 0.5723199589143861,
+          "scoreGap": 0.014971208881462195,
+          "latencyMs": 124.94355200000064,
+          "isCorrect": false
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2025-12-12T18:35:03.133Z"
+}
