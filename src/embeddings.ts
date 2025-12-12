@@ -29,14 +29,13 @@ function getCachePath(contentHash: string): string {
 }
 
 /**
- * Generate an embedding for the given name and description.
+ * Generate an embedding for the given text.
  * Results are cached to disk based on content hash.
  */
-export async function getEmbedding(name: string, description: string): Promise<Float32Array> {
+export async function getEmbedding(text: string): Promise<Float32Array> {
   await ensureModel();
   if (!model) throw new Error("Model failed to load");
 
-  const text = `${name}: ${description}`;
   const hash = crypto.createHash("sha256").update(text).digest("hex");
   const cachePath = getCachePath(hash);
 
@@ -91,11 +90,6 @@ export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
 
 import type { SkillSummary } from "./skills";
 
-export interface SkillMatch {
-  name: string;
-  score: number;
-}
-
 /**
  * Precompute embeddings for all skills at plugin startup.
  * Embeddings are cached to disk, so this warms the cache.
@@ -103,7 +97,7 @@ export interface SkillMatch {
 export async function precomputeSkillEmbeddings(skills: SkillSummary[]): Promise<void> {
   await Promise.all(
     skills.map(skill => 
-      getEmbedding(skill.name, skill.description).catch(() => {})
+      getEmbedding(skill.description).catch(() => {})
     )
   );
 }
@@ -117,27 +111,26 @@ export async function matchSkills(
   availableSkills: SkillSummary[],
   topK: number = 5,
   threshold: number = 0.30
-): Promise<SkillMatch[]> {
+): Promise<SkillSummary[]> {
   if (availableSkills.length === 0) {
     return [];
   }
 
-  const queryEmbedding = await getEmbedding("", userMessage);
+  const queryEmbedding = await getEmbedding(userMessage);
   
-  const similarities: SkillMatch[] = [];
+  const scored = await Promise.all(
+    availableSkills.map(async (skill) => ({
+      skill,
+      score: cosineSimilarity(
+        queryEmbedding,
+        await getEmbedding(skill.description)
+      ),
+    }))
+  );
   
-  for (const skill of availableSkills) {
-    const skillEmbedding = await getEmbedding(skill.name, skill.description);
-    const score = cosineSimilarity(queryEmbedding, skillEmbedding);
-    
-    similarities.push({
-      name: skill.name,
-      score,
-    });
-  }
-  
-  return similarities
+  return scored
     .filter(s => s.score >= threshold)
     .sort((a, b) => b.score - a.score)
-    .slice(0, topK);
+    .slice(0, topK)
+    .map(s => s.skill);
 }

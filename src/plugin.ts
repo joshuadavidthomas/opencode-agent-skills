@@ -112,15 +112,11 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
         return;
       }
 
-      const matches = await matchSkills(userText, skills);
+      const matchedSkills = await matchSkills(userText, skills);
 
-      if (matches.length === 0) {
+      if (matchedSkills.length === 0) {
         return;
       }
-
-      const matchedSkills = skills.filter((s) =>
-        matches.some(m => m.name === s.name)
-      );
 
       const injectionText = formatMatchedSkillsInjection(matchedSkills);
 

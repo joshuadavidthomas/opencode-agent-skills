@@ -5,13 +5,13 @@ import type { SkillSummary } from "./skills";
 describe("embeddings", () => {
   describe("getEmbedding", () => {
     test("generates 384-dimensional embedding", async () => {
-      const embedding = await getEmbedding("test-skill", "A test description");
+      const embedding = await getEmbedding("A test description");
       expect(embedding).toBeInstanceOf(Float32Array);
       expect(embedding.length).toBe(384);
     });
 
     test("generates normalized embeddings", async () => {
-      const embedding = await getEmbedding("test", "normalized vector");
+      const embedding = await getEmbedding("normalized vector");
       let magnitude = 0;
       for (let i = 0; i < embedding.length; i++) {
         const val = embedding[i];
@@ -23,10 +23,9 @@ describe("embeddings", () => {
     });
 
     test("caches results", async () => {
-      const name = "cache-test";
-      const desc = "Test caching behavior";
-      const embedding1 = await getEmbedding(name, desc);
-      const embedding2 = await getEmbedding(name, desc);
+      const text = "Test caching behavior";
+      const embedding1 = await getEmbedding(text);
+      const embedding2 = await getEmbedding(text);
 
       // Should be identical (from cache)
       expect(embedding2.length).toBe(embedding1.length);
@@ -36,8 +35,8 @@ describe("embeddings", () => {
     });
 
     test("generates different embeddings for different inputs", async () => {
-      const embedding1 = await getEmbedding("skill1", "First description");
-      const embedding2 = await getEmbedding("skill2", "Different description");
+      const embedding1 = await getEmbedding("First description");
+      const embedding2 = await getEmbedding("Different description");
 
       let areSame = true;
       for (let i = 0; i < embedding1.length; i++) {
@@ -88,8 +87,8 @@ describe("embeddings", () => {
     });
 
     test("works with real embeddings", async () => {
-      const embedding1 = await getEmbedding("skill1", "The cat sat on the mat");
-      const embedding2 = await getEmbedding("skill2", "A cat was sitting on a mat");
+      const embedding1 = await getEmbedding("The cat sat on the mat");
+      const embedding2 = await getEmbedding("A cat was sitting on a mat");
       const similarity = cosineSimilarity(embedding1, embedding2);
 
       // Similar sentences should have high similarity
@@ -129,6 +128,7 @@ describe("embeddings", () => {
 
         expect(matches.length).toBeGreaterThan(0);
         expect(matches.some(m => m.name === "git-helper")).toBe(true);
+        expect(matches.every(m => m.description)).toBe(true);
       });
 
       test("matches PDF tasks", async () => {
@@ -136,6 +136,7 @@ describe("embeddings", () => {
 
         expect(matches.length).toBeGreaterThan(0);
         expect(matches.some(m => m.name === "pdf")).toBe(true);
+        expect(matches.every(m => m.description)).toBe(true);
       });
 
       test("matches document editing tasks", async () => {
@@ -143,6 +144,7 @@ describe("embeddings", () => {
 
         expect(matches.length).toBeGreaterThan(0);
         expect(matches.some(m => m.name === "docx")).toBe(true);
+        expect(matches.every(m => m.description)).toBe(true);
       });
 
       test("matches brainstorming tasks", async () => {
@@ -150,6 +152,7 @@ describe("embeddings", () => {
 
         expect(matches.length).toBeGreaterThan(0);
         expect(matches.some(m => m.name === "brainstorming")).toBe(true);
+        expect(matches.every(m => m.description)).toBe(true);
       });
 
       test("matches frontend design tasks", async () => {
@@ -157,6 +160,7 @@ describe("embeddings", () => {
 
         expect(matches.length).toBeGreaterThan(0);
         expect(matches.some(m => m.name === "frontend-design")).toBe(true);
+        expect(matches.every(m => m.description)).toBe(true);
       });
     });
 
@@ -166,6 +170,7 @@ describe("embeddings", () => {
 
         expect(matches.length).toBeGreaterThan(0);
         expect(matches.some(m => m.name === "frontend-design" || m.name === "brainstorming")).toBe(true);
+        expect(matches.every(m => m.description)).toBe(true);
       });
 
       test("returns at most 5 skills (respects topK limit)", async () => {
@@ -176,6 +181,7 @@ describe("embeddings", () => {
 
         const matches = await matchSkills("testing", manySkills);
         expect(matches.length).toBeLessThanOrEqual(5);
+        expect(matches.every(m => m.name && m.description)).toBe(true);
       });
     });
 
@@ -202,18 +208,19 @@ describe("embeddings", () => {
 
         expect(matches.length).toBeGreaterThan(0);
         expect(matches.some(m => m.name === "git-helper")).toBe(true);
+        expect(matches.every(m => m.description)).toBe(true);
       });
 
-      test("returns SkillMatch array with name and score", async () => {
+      test("returns SkillSummary array with name and description", async () => {
         const matches = await matchSkills("Help with git", sampleSkills);
 
         expect(Array.isArray(matches)).toBe(true);
         if (matches.length > 0) {
           matches.forEach(match => {
             expect(match).toHaveProperty("name");
-            expect(match).toHaveProperty("score");
+            expect(match).toHaveProperty("description");
             expect(typeof match.name).toBe("string");
-            expect(typeof match.score).toBe("number");
+            expect(typeof match.description).toBe("string");
           });
         }
       });
