@@ -86,3 +86,58 @@ export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
   if (normA === 0 || normB === 0) return 0;
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
+
+// --- Skill Matching ---
+
+import type { SkillSummary } from "./skills";
+
+export interface SkillMatch {
+  name: string;
+  score: number;
+}
+
+/**
+ * Precompute embeddings for all skills at plugin startup.
+ * Embeddings are cached to disk, so this warms the cache.
+ */
+export async function precomputeSkillEmbeddings(skills: SkillSummary[]): Promise<void> {
+  await Promise.all(
+    skills.map(skill => 
+      getEmbedding(skill.name, skill.description).catch(() => {})
+    )
+  );
+}
+
+/**
+ * Match user message against available skills using semantic similarity.
+ * Returns top matching skills above the threshold, sorted by score.
+ */
+export async function matchSkills(
+  userMessage: string,
+  availableSkills: SkillSummary[],
+  topK: number = 5,
+  threshold: number = 0.30
+): Promise<SkillMatch[]> {
+  if (availableSkills.length === 0) {
+    return [];
+  }
+
+  const queryEmbedding = await getEmbedding("", userMessage);
+  
+  const similarities: SkillMatch[] = [];
+  
+  for (const skill of availableSkills) {
+    const skillEmbedding = await getEmbedding(skill.name, skill.description);
+    const score = cosineSimilarity(queryEmbedding, skillEmbedding);
+    
+    similarities.push({
+      name: skill.name,
+      score,
+    });
+  }
+  
+  return similarities
+    .filter(s => s.score >= threshold)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
+}

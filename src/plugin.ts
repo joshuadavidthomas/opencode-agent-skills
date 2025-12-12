@@ -20,7 +20,7 @@ import {
 } from "./utils";
 import { injectSkillsList, getSkillSummaries } from "./skills";
 import { GetAvailableSkills, ReadSkillFile, RunSkillScript, UseSkill } from "./tools";
-import { matchSkills, precomputeSkillEmbeddings } from "./preflight";
+import { matchSkills, precomputeSkillEmbeddings } from "./embeddings";
 
 const setupCompleteSessions = new Set<string>();
 
