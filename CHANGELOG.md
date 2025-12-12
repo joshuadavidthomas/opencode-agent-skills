@@ -18,6 +18,17 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Added
+
+- Semantic skill matching: after the initial skills list injection, subsequent messages are matched against skill descriptions using local embeddings
+- When a message matches available skills, injects a 3-step evaluation prompt (EVALUATE → DECIDE → ACTIVATE) to encourage skill loading (inspired by [@spences10](https://github.com/spences10)'s [blog post](https://scottspence.com/posts/how-to-make-claude-code-skills-activate-reliably))
+- Disk-cached embeddings for low-latency matching (~/.cache/opencode-agent-skills/)
+- Session cleanup on `session.deleted` event
+
+### Changed
+
+- Added `@huggingface/transformers` dependency for local embedding generation (quantized all-MiniLM-L6-v2)
+
 ## [0.5.0]
 
 ### Added
