@@ -20,24 +20,9 @@ import {
 } from "./utils";
 import { injectSkillsList, getSkillSummaries } from "./skills";
 import { GetAvailableSkills, ReadSkillFile, RunSkillScript, UseSkill } from "./tools";
-import {
-  makePreflightCallWithTimeout,
-  type OAuthAuthState,
-  type ApiKeyAuthState,
-} from "./preflight";
-
-interface RuntimeProviderContext {
-  info?: { id?: string };
-  options?: {
-    fetch?: typeof fetch;
-    baseURL?: string;
-    apiKey?: string;
-  };
-}
+import { matchSkills } from "./preflight";
 
 const setupCompleteSessions = new Set<string>();
-const sessionAuthCache = new Map<string, OAuthAuthState>();
-let apiKeyAuth: ApiKeyAuthState | null = null;
 
 function formatMatchedSkillsInjection(
   matchedSkills: Array<{ name: string; description: string }>
@@ -46,41 +31,22 @@ function formatMatchedSkillsInjection(
     .map((s) => `- ${s.name}: ${s.description}`)
     .join("\n");
 
-  return `<relevant-skills>
-The following skills may help with your request. Use the use_skill tool to load any that seem relevant.
+  return `<skill-evaluation-required>
+SKILL EVALUATION PROCESS
+
+The following skills may be relevant to your request:
 
 ${skillLines}
-</relevant-skills>`;
+
+Step 1 - EVALUATE: Determine if these skills would genuinely help
+Step 2 - DECIDE: Choose which skills (if any) are actually needed
+Step 3 - ACTIVATE: Call use_skill("name") for each chosen skill
+
+If no skills are needed for this request, proceed without activation.
+</skill-evaluation-required>`;
 }
 
 export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
-  try {
-    const providers = await client.provider.list();
-    const connected = providers.data?.connected ?? [];
-    const allProviders = (providers.data?.all ?? []) as Array<{
-      id: string;
-      key?: string;
-      options?: { apiKey?: string; baseURL?: string };
-    }>;
-
-    for (const provider of allProviders) {
-      if (!connected.includes(provider.id)) continue;
-
-      const apiKey = provider.key ?? provider.options?.apiKey;
-      if (apiKey && apiKey.length > 0) {
-        apiKeyAuth = {
-          type: "apikey",
-          apiKey,
-          providerId: provider.id,
-          baseURL: provider.options?.baseURL,
-        };
-        break;
-      }
-    }
-  } catch {
-    // Silently ignore - will fall back to OAuth only
-  }
-
   return {
     "chat.message": async (input, output) => {
       const sessionID = output.message.sessionID;
@@ -122,16 +88,11 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
         await maybeInjectSuperpowersBootstrap(directory, client, sessionID, context);
         await injectSkillsList(directory, client, sessionID, context);
 
-        // First message - no preflight (no cached auth yet)
+        // First message - no skill matching yet
         return;
       }
 
-      // Second+ messages: Try preflight skill evaluation
-      const auth = sessionAuthCache.get(sessionID) ?? apiKeyAuth;
-      if (!auth) {
-        return;
-      }
-
+      // Second+ messages: Try client-side skill matching
       const userText = extractTextFromParts(output.parts);
       if (!userText) {
         return;
@@ -142,18 +103,14 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
         return;
       }
 
-      const matchedSkillNames = await makePreflightCallWithTimeout(
-        auth,
-        userText,
-        skills
-      );
+      const matchResult = matchSkills(userText, skills);
 
-      if (matchedSkillNames.length === 0) {
+      if (!matchResult.matched || matchResult.skills.length === 0) {
         return;
       }
 
       const matchedSkills = skills.filter((s) =>
-        matchedSkillNames.includes(s.name)
+        matchResult.skills.includes(s.name)
       );
 
       if (matchedSkills.length > 0) {
@@ -164,25 +121,6 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
           text: injectionText,
           synthetic: true,
         } as typeof output.parts[number]);
-      }
-    },
-
-    "chat.params": async (input) => {
-      const sessionID = input.sessionID;
-
-      // Cast to runtime type (SDK types don't include options.fetch)
-      const provider = input.provider as unknown as RuntimeProviderContext;
-
-      if (
-        provider?.options &&
-        typeof provider.options.fetch === "function"
-      ) {
-        sessionAuthCache.set(sessionID, {
-          type: "oauth",
-          fetch: provider.options.fetch,
-          providerId: provider.info?.id ?? input.model?.id ?? "unknown",
-          baseURL: provider.options.baseURL,
-        });
       }
     },
 
@@ -197,7 +135,6 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
       if (event.type === "session.deleted") {
         const sessionID = event.properties.info.id;
         setupCompleteSessions.delete(sessionID);
-        sessionAuthCache.delete(sessionID);
       }
     },
 

@@ -1,328 +1,239 @@
 /**
- * Preflight LLM call for skill evaluation.
+ * Client-side skill matching for skill evaluation.
  *
- * Makes a quick LLM call to evaluate which skills are relevant to a user's message.
- * Supports both OAuth (via cached fetch) and API key authentication.
+ * Uses heuristic gates and local search to match skills to user messages
+ * without requiring LLM calls.
  */
 
+import MiniSearch from "minisearch";
+import { createHash } from "node:crypto";
 import type { SkillSummary } from "./skills";
 
-
-/** Timeout for preflight calls (short to avoid blocking) */
-export const PREFLIGHT_TIMEOUT_MS = 2000;
-
-/** Max tokens for preflight response (just need a JSON array) */
-const MAX_TOKENS = 200;
-
-/** Model priority for cheap/fast models */
-const CHEAP_MODELS = {
-  anthropic: "claude-3-haiku-20240307",
-  "github-copilot": "gpt-4o-mini",
-  "github-copilot-enterprise": "gpt-4o-mini",
-  openai: "gpt-4o-mini",
-  google: "gemini-2.0-flash",
-} as const;
-
-
-/** Cached OAuth authentication state */
-export interface OAuthAuthState {
-  type: "oauth";
-  fetch: typeof fetch;
-  providerId: string;
-  baseURL?: string;
-}
-
-/** Cached API key authentication state */
-export interface ApiKeyAuthState {
-  type: "apikey";
-  apiKey: string;
-  providerId: string;
-  baseURL?: string;
-}
-
-/** Combined auth state */
-export type AuthState = OAuthAuthState | ApiKeyAuthState;
-
-/** Result of a preflight call */
-interface PreflightResult {
-  success: boolean;
-  skills: string[];
-  error?: string;
-}
-
-
 /**
- * Build the preflight evaluation prompt.
+ * Detect if a user message is a meta-conversation that should skip skill matching.
+ * 
+ * Returns true for:
+ * - Short approvals: yes, no, ok, sure, nope, yep, yeah, nah
+ * - Numbered responses: "1", "2.", "3 ", etc.
+ * - Questions to the assistant: "what...", "why...", "how...", "can you...", etc.
+ * - Meta-discussion: "what do you think", "your thoughts", "any ideas", etc.
+ * 
+ * @param message - The user's message to evaluate
+ * @returns true if this is a meta-conversation that should skip skill matching
  */
-export function buildPreflightPrompt(
-  userMessage: string,
-  skills: SkillSummary[]
-): string {
-  const skillsList = skills
-    .map((s, i) => `${i + 1}. ${s.name}: ${s.description}`)
-    .join("\n");
-
-  return `You are evaluating which skills are relevant to a user's request.
-
-User message:
-"""
-${userMessage.slice(0, 1000)}
-"""
-
-Available skills:
-${skillsList}
-
-Return a JSON array of skill names that are relevant to this request.
-If no skills are relevant, return an empty array.
-Only include skills that would genuinely help with this specific task.
-
-Response (JSON array only):`;
+export function isMetaConversation(message: string): boolean {
+  const trimmed = message.trim();
+  
+  // Empty messages are meta
+  if (!trimmed) {
+    return true;
+  }
+  
+  // Short approvals: yes, no, ok, sure, nope, yep, yeah, nah
+  if (/^(yes|no|ok|sure|nope|yep|yeah|nah)\s*$/i.test(trimmed)) {
+    return true;
+  }
+  
+  // Numbered responses: "1", "2.", "3 ", etc.
+  if (/^\d+(\.|\s|$)/.test(trimmed)) {
+    return true;
+  }
+  
+  // Questions to assistant (case insensitive)
+  if (/^(what|why|how|when|where|who|can you|could you|would you|do you)/i.test(trimmed)) {
+    return true;
+  }
+  
+  // Meta-discussion phrases (case insensitive)
+  if (/(what do you think|your thoughts|any ideas|suggestions|recommend)/i.test(trimmed)) {
+    return true;
+  }
+  
+  return false;
 }
 
-
 /**
- * Call Anthropic API with OAuth fetch.
+ * Type for skill documents in the search index.
  */
-async function callAnthropicOAuth(
-  authFetch: typeof fetch,
-  prompt: string
-): Promise<string> {
-  const response = await authFetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: CHEAP_MODELS.anthropic,
-      max_tokens: MAX_TOKENS,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Anthropic API error: ${response.status}`);
-  }
-
-  const json = (await response.json()) as { content: Array<{ text: string }> };
-  return json.content[0]?.text ?? "";
+interface SkillDocument extends SkillSummary {
+  id: string;
 }
 
 /**
- * Call OpenAI-compatible API with OAuth fetch (GitHub Copilot, etc).
+ * Result from skill index query.
  */
-async function callOpenAICompatibleOAuth(
-  authFetch: typeof fetch,
-  baseURL: string,
-  prompt: string,
-  model: string
-): Promise<string> {
-  const response = await authFetch(`${baseURL}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: MAX_TOKENS,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI-compatible API error: ${response.status}`);
-  }
-
-  const json = (await response.json()) as {
-    choices: Array<{ message: { content: string } }>;
-  };
-  return json.choices[0]?.message?.content ?? "";
+export interface SkillMatch {
+  name: string;
+  score: number;
 }
 
 /**
- * Call Anthropic API with API key.
+ * Cached skill search index with content hash.
  */
-async function callAnthropicWithKey(
-  apiKey: string,
-  prompt: string
-): Promise<string> {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "anthropic-version": "2023-06-01",
-      "x-api-key": apiKey,
-    },
-    body: JSON.stringify({
-      model: CHEAP_MODELS.anthropic,
-      max_tokens: MAX_TOKENS,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Anthropic API error: ${response.status}`);
-  }
-
-  const json = (await response.json()) as { content: Array<{ text: string }> };
-  return json.content[0]?.text ?? "";
+interface CachedSkillIndex {
+  hash: string;
+  index: MiniSearch<SkillDocument>;
 }
 
-/**
- * Call OpenAI API with API key.
- */
-async function callOpenAIWithKey(
-  apiKey: string,
-  prompt: string,
-  baseURL: string = "https://api.openai.com/v1"
-): Promise<string> {
-  const response = await fetch(`${baseURL}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: CHEAP_MODELS.openai,
-      max_tokens: MAX_TOKENS,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status}`);
-  }
-
-  const json = (await response.json()) as {
-    choices: Array<{ message: { content: string } }>;
-  };
-  return json.choices[0]?.message?.content ?? "";
-}
-
+/** Module-level cache for skill search index */
+let cachedIndex: CachedSkillIndex | null = null;
 
 /**
- * Parse skill names from LLM response.
- * Attempts to extract a JSON array, with fallback regex parsing.
- */
-export function parseSkillResponse(response: string): string[] {
-  const trimmed = response.trim();
-
-  // Try direct JSON parse first
-  try {
-    const parsed = JSON.parse(trimmed);
-    if (Array.isArray(parsed)) {
-      return parsed.filter((item): item is string => typeof item === "string");
-    }
-  } catch {
-    // Not valid JSON, try extracting
-  }
-
-  // Try to find JSON array in response
-  const arrayMatch = trimmed.match(/\[[\s\S]*?\]/);
-  if (arrayMatch) {
-    try {
-      const parsed = JSON.parse(arrayMatch[0]);
-      if (Array.isArray(parsed)) {
-        return parsed.filter((item): item is string => typeof item === "string");
-      }
-    } catch {
-      // Couldn't parse extracted array
-    }
-  }
-
-  // Fallback: return empty array
-  return [];
-}
-
-
-/**
- * Make a preflight LLM call to evaluate which skills are relevant.
+ * Build a MiniSearch index over skills.
+ * Configures with BM25-like scoring over name and description fields.
  *
- * @param auth - Authentication state (OAuth or API key)
- * @param userMessage - The user's message to evaluate
- * @param skills - Available skill summaries
- * @returns Array of relevant skill names, empty on failure
+ * @param skills - Array of skill summaries to index
+ * @returns Configured MiniSearch index
  */
-export async function makePreflightCall(
-  auth: AuthState,
-  userMessage: string,
-  skills: SkillSummary[]
-): Promise<PreflightResult> {
-  if (skills.length === 0) {
-    return { success: true, skills: [] };
+export function buildSkillSearchIndex(skills: SkillSummary[]): MiniSearch<SkillDocument> {
+  const index = new MiniSearch<SkillDocument>({
+    fields: ["name", "description"],
+    storeFields: ["name"],
+    searchOptions: {
+      boost: { name: 2 },
+      fuzzy: 0.2,
+      prefix: true,
+    },
+  });
+
+  const documents: SkillDocument[] = skills.map((skill) => ({
+    id: skill.name,
+    name: skill.name,
+    description: skill.description,
+  }));
+
+  index.addAll(documents);
+  return index;
+}
+
+/**
+ * Query the skill search index.
+ * Returns matches above the score threshold, limited to top K results.
+ *
+ * @param index - MiniSearch index to query
+ * @param query - Search query string
+ * @param topK - Maximum number of results to return
+ * @param threshold - Minimum score threshold for matches
+ * @returns Array of skill matches with scores
+ */
+export function querySkillIndex(
+  index: MiniSearch<SkillDocument>,
+  query: string,
+  topK: number,
+  threshold: number
+): SkillMatch[] {
+  const results = index.search(query, { boost: { name: 2 }, fuzzy: 0.2, prefix: true });
+
+  // Filter by threshold and take top K
+  const matches = results
+    .filter((result) => result.score >= threshold)
+    .slice(0, topK)
+    .map((result) => ({
+      name: result.name as string,
+      score: result.score,
+    }));
+
+  console.debug("Skill match scores:", matches);
+  return matches;
+}
+
+/**
+ * Compute a hash of skills for cache invalidation.
+ *
+ * @param skills - Array of skill summaries
+ * @returns Hash string
+ */
+function hashSkills(skills: SkillSummary[]): string {
+  const content = JSON.stringify(
+    skills.map((s) => ({ name: s.name, description: s.description }))
+  );
+  return createHash("sha256").update(content).digest("hex");
+}
+
+/**
+ * Get or build the skill search index, using cache if skills haven't changed.
+ *
+ * @param skills - Array of skill summaries
+ * @returns MiniSearch index (cached or newly built)
+ */
+export function getOrBuildIndex(skills: SkillSummary[]): MiniSearch<SkillDocument> {
+  const hash = hashSkills(skills);
+
+  if (cachedIndex && cachedIndex.hash === hash) {
+    return cachedIndex.index;
   }
 
-  const prompt = buildPreflightPrompt(userMessage, skills);
+  const index = buildSkillSearchIndex(skills);
+  cachedIndex = { hash, index };
+  return index;
+}
 
-  try {
-    let response: string;
+/**
+ * Result of skill matching.
+ */
+export interface MatchResult {
+  /** Whether any skills matched */
+  matched: boolean;
+  /** Array of matched skill names */
+  skills: string[];
+  /** Reason for match or no-match */
+  reason: string;
+}
 
-    if (auth.type === "oauth") {
-      const { fetch: authFetch, providerId, baseURL } = auth;
-
-      if (providerId === "anthropic") {
-        response = await callAnthropicOAuth(authFetch, prompt);
-      } else if (
-        providerId === "github-copilot" ||
-        providerId === "github-copilot-enterprise"
-      ) {
-        if (!baseURL) {
-          return { success: false, skills: [], error: "No baseURL for GitHub Copilot" };
-        }
-        const model = CHEAP_MODELS[providerId as keyof typeof CHEAP_MODELS] ?? "gpt-4o-mini";
-        response = await callOpenAICompatibleOAuth(authFetch, baseURL, prompt, model);
-      } else if (providerId === "openai") {
-        const url = baseURL ?? "https://api.openai.com/v1";
-        response = await callOpenAICompatibleOAuth(authFetch, url, prompt, CHEAP_MODELS.openai);
-      } else {
-        return { success: false, skills: [], error: `Unsupported OAuth provider: ${providerId}` };
-      }
-    } else {
-      // API key auth
-      const { apiKey, providerId, baseURL } = auth;
-
-      if (providerId === "anthropic" || providerId === "opencode") {
-        // opencode uses Anthropic-compatible API
-        response = await callAnthropicWithKey(apiKey, prompt);
-      } else if (providerId === "openai") {
-        response = await callOpenAIWithKey(apiKey, prompt, baseURL);
-      } else {
-        return { success: false, skills: [], error: `Unsupported API key provider: ${providerId}` };
-      }
-    }
-
-    const matchedSkills = parseSkillResponse(response);
-    return { success: true, skills: matchedSkills };
-  } catch (error) {
+/**
+ * Match skills to a user message using heuristic gate + local search.
+ * 
+ * This is the main entry point for client-side skill matching:
+ * 1. Check heuristic gate - if meta-conversation, skip matching
+ * 2. Build/get search index over available skills
+ * 3. Query index with user message
+ * 4. Return matched skills above threshold
+ * 
+ * @param userMessage - The user's message to evaluate
+ * @param availableSkills - Available skill summaries to match against
+ * @returns MatchResult with matched skills and reason
+ */
+export function matchSkills(
+  userMessage: string,
+  availableSkills: SkillSummary[]
+): MatchResult {
+  // Step 1: Check heuristic gate
+  if (isMetaConversation(userMessage)) {
     return {
-      success: false,
+      matched: false,
       skills: [],
-      error: error instanceof Error ? error.message : String(error),
+      reason: "Meta-conversation detected",
     };
   }
-}
 
-/**
- * Make a preflight call with timeout.
- * Returns empty array on timeout or error.
- */
-export async function makePreflightCallWithTimeout(
-  auth: AuthState,
-  userMessage: string,
-  skills: SkillSummary[],
-  timeoutMs: number = PREFLIGHT_TIMEOUT_MS
-): Promise<string[]> {
-  try {
-    const result = await Promise.race([
-      makePreflightCall(auth, userMessage, skills),
-      new Promise<PreflightResult>((_, reject) =>
-        setTimeout(() => reject(new Error("timeout")), timeoutMs)
-      ),
-    ]);
-
-    return result.skills;
-  } catch {
-    // On timeout or error, return empty (no skills matched)
-    return [];
+  // Handle empty skills list
+  if (availableSkills.length === 0) {
+    return {
+      matched: false,
+      skills: [],
+      reason: "No skills available",
+    };
   }
+
+  // Step 2: Get or build index
+  const index = getOrBuildIndex(availableSkills);
+
+  // Step 3: Query index (top 5 results, threshold 5.0)
+  const matches = querySkillIndex(index, userMessage, 5, 5.0);
+
+  // Step 4: Return result
+  if (matches.length > 0) {
+    return {
+      matched: true,
+      skills: matches.map((m) => m.name),
+      reason: "Matched via local search",
+    };
+  }
+
+  // Step 5: No skills found
+  return {
+    matched: false,
+    skills: [],
+    reason: "No relevant skills found",
+  };
 }

@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@opencode-ai/plugin": "^1.0.115",
+    "minisearch": "^7.2.0",
     "zod": "^4.1.13"
   },
   "devDependencies": {
