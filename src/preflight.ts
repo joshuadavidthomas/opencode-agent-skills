@@ -1,7 +1,7 @@
 /**
  * Client-side skill matching for skill evaluation.
  *
- * Uses heuristic gates and local search to match skills to user messages
+ * Uses semantic search with embeddings to match skills to user messages
  * without requiring LLM calls.
  */
 
@@ -10,54 +10,6 @@ import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transform
 import { createHash } from "node:crypto";
 import type { SkillSummary } from "./skills";
 import { debugLog } from "./utils";
-
-/**
- * Detect if a user message is a meta-conversation that should skip skill matching.
- * 
- * Returns true for:
- * - Short approvals: yes, no, ok, sure, nope, yep, yeah, nah
- * - Numbered responses: "1", "2.", "3 ", etc.
- * - Questions to the assistant: "what...", "why...", "how...", "can you...", etc.
- * - Meta-discussion: "what do you think", "your thoughts", "any ideas", etc.
- * 
- * @param message - The user's message to evaluate
- * @returns true if this is a meta-conversation that should skip skill matching
- */
-export async function isMetaConversation(message: string): Promise<boolean> {
-  const trimmed = message.trim();
-  
-  // Empty messages are meta
-  if (!trimmed) {
-    await debugLog("Meta-conversation detected: empty message");
-    return true;
-  }
-  
-  // Short approvals: yes, no, ok, sure, nope, yep, yeah, nah
-  if (/^(yes|no|ok|sure|nope|yep|yeah|nah)\s*$/i.test(trimmed)) {
-    await debugLog("Meta-conversation detected: short approval", { message: trimmed });
-    return true;
-  }
-  
-  // Numbered responses: "1", "2.", "3 ", etc.
-  if (/^\d+(\.|\s|$)/.test(trimmed)) {
-    await debugLog("Meta-conversation detected: numbered response", { message: trimmed });
-    return true;
-  }
-  
-  // Questions to assistant (case insensitive)
-  if (/^(what|why|how|when|where|who|can you|could you|would you|do you)/i.test(trimmed)) {
-    await debugLog("Meta-conversation detected: question to assistant", { message: trimmed });
-    return true;
-  }
-  
-  // Meta-discussion phrases (case insensitive)
-  if (/(what do you think|your thoughts|any ideas|suggestions|recommend)/i.test(trimmed)) {
-    await debugLog("Meta-conversation detected: meta-discussion phrase", { message: trimmed });
-    return true;
-  }
-  
-  return false;
-}
 
 /**
  * Type for skill documents in the search index.
@@ -343,13 +295,11 @@ export interface MatchResult {
 }
 
 /**
- * Match skills to a user message using heuristic gate + local search.
+ * Match skills to a user message using semantic search.
  * 
  * This is the main entry point for client-side skill matching:
- * 1. Check heuristic gate - if meta-conversation, skip matching
- * 2. Build/get search index over available skills
- * 3. Query index with user message
- * 4. Return matched skills above threshold
+ * 1. Query using semantic similarity (embeddings + cosine distance)
+ * 2. Return matched skills above threshold
  * 
  * @param userMessage - The user's message to evaluate
  * @param availableSkills - Available skill summaries to match against
@@ -360,17 +310,6 @@ export async function matchSkills(
   availableSkills: SkillSummary[]
 ): Promise<MatchResult> {
   await debugLog("matchSkills entry", { message: userMessage, skillCount: availableSkills.length });
-
-  // Step 1: Check heuristic gate
-  if (await isMetaConversation(userMessage)) {
-    const result = {
-      matched: false,
-      skills: [],
-      reason: "Meta-conversation detected",
-    };
-    await debugLog("matchSkills exit (meta-conversation)", result);
-    return result;
-  }
 
   // Handle empty skills list
   if (availableSkills.length === 0) {

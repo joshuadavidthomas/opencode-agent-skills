@@ -5,7 +5,6 @@
 import { describe, test, expect } from "bun:test";
 import { levenshtein, findClosestMatch } from "./utils";
 import {
-  isMetaConversation,
   buildSkillSearchIndex,
   querySkillIndex,
   getOrBuildIndex,
@@ -115,201 +114,6 @@ describe("findClosestMatch", () => {
   test("typo in script name", async () => {
     const candidates = ["build.sh", "deploy.sh", "test.sh"];
     expect(findClosestMatch("biuld.sh", candidates)).toBe("build.sh");
-  });
-});
-
-describe("isMetaConversation", () => {
-  describe("empty messages", () => {
-    test("empty string is meta", async () => {
-      expect(await isMetaConversation("")).toBe(true);
-    });
-
-    test("whitespace only is meta", async () => {
-      expect(await isMetaConversation("   ")).toBe(true);
-      expect(await isMetaConversation("\t\n")).toBe(true);
-    });
-  });
-
-  describe("short approvals", () => {
-    test("detects 'yes' variations", async () => {
-      expect(await isMetaConversation("yes")).toBe(true);
-      expect(await isMetaConversation("Yes")).toBe(true);
-      expect(await isMetaConversation("YES")).toBe(true);
-      expect(await isMetaConversation("yep")).toBe(true);
-      expect(await isMetaConversation("yeah")).toBe(true);
-    });
-
-    test("detects 'no' variations", async () => {
-      expect(await isMetaConversation("no")).toBe(true);
-      expect(await isMetaConversation("No")).toBe(true);
-      expect(await isMetaConversation("NO")).toBe(true);
-      expect(await isMetaConversation("nope")).toBe(true);
-      expect(await isMetaConversation("nah")).toBe(true);
-    });
-
-    test("detects other short approvals", async () => {
-      expect(await isMetaConversation("ok")).toBe(true);
-      expect(await isMetaConversation("OK")).toBe(true);
-      expect(await isMetaConversation("sure")).toBe(true);
-      expect(await isMetaConversation("Sure")).toBe(true);
-    });
-
-    test("allows trailing whitespace", async () => {
-      expect(await isMetaConversation("yes ")).toBe(true);
-      expect(await isMetaConversation("no  ")).toBe(true);
-      expect(await isMetaConversation("ok\t")).toBe(true);
-    });
-
-    test("rejects approvals with extra content", async () => {
-      expect(await isMetaConversation("yes please")).toBe(false);
-      expect(await isMetaConversation("no thanks")).toBe(false);
-      expect(await isMetaConversation("okay then")).toBe(false);
-    });
-  });
-
-  describe("numbered responses", () => {
-    test("detects numbered list items", async () => {
-      expect(await isMetaConversation("1")).toBe(true);
-      expect(await isMetaConversation("2 ")).toBe(true);
-      expect(await isMetaConversation("3.")).toBe(true);
-      expect(await isMetaConversation("42. ")).toBe(true);
-    });
-
-    test("detects numbers at start with text", async () => {
-      expect(await isMetaConversation("1 First option")).toBe(true);
-      expect(await isMetaConversation("2. Second choice")).toBe(true);
-      expect(await isMetaConversation("3 something else")).toBe(true);
-    });
-
-    test("rejects numbers not at start", async () => {
-      expect(await isMetaConversation("Option 1")).toBe(false);
-      expect(await isMetaConversation("There are 3 options")).toBe(false);
-    });
-  });
-
-  describe("questions to assistant", () => {
-    test("detects 'what' questions", async () => {
-      expect(await isMetaConversation("what is this?")).toBe(true);
-      expect(await isMetaConversation("What should I do?")).toBe(true);
-      expect(await isMetaConversation("WHAT are the options?")).toBe(true);
-    });
-
-    test("detects 'why' questions", async () => {
-      expect(await isMetaConversation("why did this happen?")).toBe(true);
-      expect(await isMetaConversation("Why not?")).toBe(true);
-    });
-
-    test("detects 'how' questions", async () => {
-      expect(await isMetaConversation("how do I do this?")).toBe(true);
-      expect(await isMetaConversation("How should I proceed?")).toBe(true);
-    });
-
-    test("detects 'when/where/who' questions", async () => {
-      expect(await isMetaConversation("when should I run this?")).toBe(true);
-      expect(await isMetaConversation("where is the file?")).toBe(true);
-      expect(await isMetaConversation("who created this?")).toBe(true);
-    });
-
-    test("detects 'can you' requests", async () => {
-      expect(await isMetaConversation("can you help me?")).toBe(true);
-      expect(await isMetaConversation("Can you explain this?")).toBe(true);
-    });
-
-    test("detects 'could you' requests", async () => {
-      expect(await isMetaConversation("could you show me?")).toBe(true);
-      expect(await isMetaConversation("Could you check this?")).toBe(true);
-    });
-
-    test("detects 'would you' requests", async () => {
-      expect(await isMetaConversation("would you mind?")).toBe(true);
-      expect(await isMetaConversation("Would you prefer?")).toBe(true);
-    });
-
-    test("detects 'do you' questions", async () => {
-      expect(await isMetaConversation("do you understand?")).toBe(true);
-      expect(await isMetaConversation("Do you know?")).toBe(true);
-    });
-
-    test("rejects questions not at start", async () => {
-      expect(await isMetaConversation("I wonder what this is")).toBe(false);
-      expect(await isMetaConversation("Tell me how to do this")).toBe(false);
-    });
-  });
-
-  describe("meta-discussion phrases", () => {
-    test("detects 'what do you think'", async () => {
-      expect(await isMetaConversation("what do you think?")).toBe(true);
-      expect(await isMetaConversation("What do you think about this?")).toBe(true);
-      expect(await isMetaConversation("So what do you think we should do?")).toBe(true);
-    });
-
-    test("detects 'your thoughts'", async () => {
-      expect(await isMetaConversation("your thoughts?")).toBe(true);
-      expect(await isMetaConversation("What are your thoughts?")).toBe(true);
-      expect(await isMetaConversation("I'd like your thoughts on this")).toBe(true);
-    });
-
-    test("detects 'any ideas'", async () => {
-      expect(await isMetaConversation("any ideas?")).toBe(true);
-      expect(await isMetaConversation("Do you have any ideas?")).toBe(true);
-      expect(await isMetaConversation("Looking for any ideas here")).toBe(true);
-    });
-
-    test("detects 'suggestions'", async () => {
-      expect(await isMetaConversation("suggestions?")).toBe(true);
-      expect(await isMetaConversation("Any suggestions?")).toBe(true);
-      expect(await isMetaConversation("I need suggestions for this")).toBe(true);
-    });
-
-    test("detects 'recommend'", async () => {
-      expect(await isMetaConversation("what would you recommend?")).toBe(true);
-      expect(await isMetaConversation("Do you recommend this approach?")).toBe(true);
-      expect(await isMetaConversation("I'd like to know what you recommend")).toBe(true);
-    });
-  });
-
-  describe("non-meta messages", () => {
-    test("rejects clear task requests", async () => {
-      expect(await isMetaConversation("Create a new file")).toBe(false);
-      expect(await isMetaConversation("Fix the bug in auth.ts")).toBe(false);
-      expect(await isMetaConversation("Refactor the database module")).toBe(false);
-    });
-
-    test("rejects technical descriptions", async () => {
-      expect(await isMetaConversation("The function returns null")).toBe(false);
-      expect(await isMetaConversation("Add error handling to the parser")).toBe(false);
-      expect(await isMetaConversation("Update the tests to cover edge cases")).toBe(false);
-    });
-
-    test("rejects imperative commands", async () => {
-      expect(await isMetaConversation("Run the tests")).toBe(false);
-      expect(await isMetaConversation("Install dependencies")).toBe(false);
-      expect(await isMetaConversation("Commit the changes")).toBe(false);
-    });
-
-    test("rejects longer descriptive text", async () => {
-      expect(await isMetaConversation("I need to implement a new feature for user authentication")).toBe(false);
-      expect(await isMetaConversation("The application should handle errors gracefully")).toBe(false);
-      expect(await isMetaConversation("Let's add support for multiple file formats")).toBe(false);
-    });
-  });
-
-  describe("edge cases", () => {
-    test("handles mixed case", async () => {
-      expect(await isMetaConversation("YeS")).toBe(true);
-      expect(await isMetaConversation("WhAt Is ThIs?")).toBe(true);
-    });
-
-    test("handles punctuation", async () => {
-      expect(await isMetaConversation("yes.")).toBe(false); // Has extra content
-      expect(await isMetaConversation("what?")).toBe(true);
-      expect(await isMetaConversation("what!")).toBe(true);
-    });
-
-    test("handles leading whitespace", async () => {
-      expect(await isMetaConversation("  yes")).toBe(true);
-      expect(await isMetaConversation("\twhat is this?")).toBe(true);
-    });
   });
 });
 
@@ -546,55 +350,6 @@ describe("matchSkills", () => {
     },
   ];
 
-  describe("meta-conversation detection", () => {
-    test("returns matched: false for 'yes' approval", async () => {
-      const result = await matchSkills("yes", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-
-    test("returns matched: false for 'no' approval", async () => {
-      const result = await matchSkills("no", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-
-    test("returns matched: false for numbered response", async () => {
-      const result = await matchSkills("1", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-
-    test("returns matched: false for question to assistant", async () => {
-      const result = await matchSkills("what should I do?", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-
-    test("returns matched: false for meta-discussion", async () => {
-      const result = await matchSkills("what do you think?", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-
-    test("returns matched: false for empty message", async () => {
-      const result = await matchSkills("", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-  });
 
   describe("task request matching", () => {
     test("matches git-related tasks", async () => {
@@ -714,24 +469,6 @@ describe("matchSkills", () => {
     });
   });
 
-  describe("integration with heuristic gate", () => {
-    test("heuristic gate takes precedence over search", async () => {
-      // "yes" is a meta-conversation, even though it might match some skills
-      const result = await matchSkills("yes", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.reason).toBe("Meta-conversation detected");
-      // Should not have performed search
-      expect(result.skills).toEqual([]);
-    });
-
-    test("passes non-meta messages to search", async () => {
-      const result = await matchSkills("Fix the bug", sampleSkills);
-      
-      // Not a meta-conversation, so should attempt search
-      expect(result.reason).not.toBe("Meta-conversation detected");
-    });
-  });
 
   describe("consistency with original behavior", () => {
     test("returns empty skills array when no match (like makePreflightCallWithTimeout)", async () => {
@@ -776,55 +513,6 @@ describe("matchSkills", () => {
     },
   ];
 
-  describe("meta-conversation detection", () => {
-    test("returns matched: false for 'yes' approval", async () => {
-      const result = await matchSkills("yes", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-
-    test("returns matched: false for 'no' approval", async () => {
-      const result = await matchSkills("no", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-
-    test("returns matched: false for numbered response", async () => {
-      const result = await matchSkills("1", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-
-    test("returns matched: false for question to assistant", async () => {
-      const result = await matchSkills("what should I do?", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-
-    test("returns matched: false for meta-discussion", async () => {
-      const result = await matchSkills("what do you think?", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-
-    test("returns matched: false for empty message", async () => {
-      const result = await matchSkills("", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("Meta-conversation detected");
-    });
-  });
 
   describe("task request matching", () => {
     test("matches git-related tasks", async () => {
@@ -943,21 +631,6 @@ describe("matchSkills", () => {
     });
   });
 
-  describe("integration with heuristic gate", () => {
-    test("heuristic gate takes precedence over search", async () => {
-      const result = await matchSkills("yes", sampleSkills);
-      
-      expect(result.matched).toBe(false);
-      expect(result.reason).toBe("Meta-conversation detected");
-      expect(result.skills).toEqual([]);
-    });
-
-    test("passes non-meta messages to search", async () => {
-      const result = await matchSkills("Fix the bug", sampleSkills);
-      
-      expect(result.reason).not.toBe("Meta-conversation detected");
-    });
-  });
 
   describe("consistency with original behavior", () => {
     test("returns empty skills array when no match", async () => {
