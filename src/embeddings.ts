@@ -51,7 +51,6 @@ export async function getEmbedding(name: string, description: string): Promise<F
     // Generate new embedding
   }
 
-  // Generate embedding
   const result = await model(text, { pooling: "mean", normalize: true });
 
   const embedding = result.data instanceof Float32Array

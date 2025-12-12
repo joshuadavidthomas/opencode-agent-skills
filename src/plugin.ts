@@ -15,9 +15,7 @@ import type { Plugin } from "@opencode-ai/plugin";
 import { maybeInjectSuperpowersBootstrap } from "./superpowers";
 import {
   getSessionContext,
-  extractTextFromParts,
   injectSyntheticContent,
-  initDebugLog,
   type SessionContext,
 } from "./utils";
 import { injectSkillsList, getSkillSummaries } from "./skills";
@@ -49,8 +47,6 @@ If no skills are needed for this request, proceed without activation.
 }
 
 export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
-  await initDebugLog(directory);
-
   const skills = await getSkillSummaries(directory);
   precomputeSkillEmbeddings(skills).catch(err => {
     console.error("Failed to pre-compute skill embeddings:", err);
@@ -98,7 +94,15 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
         return;
       }
 
-      const userText = extractTextFromParts(output.parts);
+      const userText = output.parts
+        .flatMap(part =>
+          part.type === "text" && typeof part.text === "string" && !part.synthetic
+            ? [part.text]
+            : []
+        )
+        .join("\n")
+        .trim();
+
       if (!userText) {
         return;
       }
