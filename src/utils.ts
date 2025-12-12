@@ -1,6 +1,34 @@
 import type { PluginInput } from "@opencode-ai/plugin";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import * as os from "node:os";
+
+/**
+ * Debug log file path - session-specific with timestamp.
+ * Created once per plugin load.
+ */
+const DEBUG_LOG_PATH = path.join(
+  os.homedir(),
+  '.config/opencode',
+  `skills-debug-${new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '')}.log`
+);
+
+/**
+ * Write debug log entry to session-specific file.
+ * Silently fails if can't write (doesn't break plugin).
+ * 
+ * @param message - Log message
+ * @param data - Optional data to JSON-stringify
+ */
+export async function debugLog(message: string, data?: any): Promise<void> {
+  try {
+    const timestamp = new Date().toISOString();
+    const logLine = `[${timestamp}] ${message}${data ? ': ' + JSON.stringify(data, null, 2) : ''}\n`;
+    await fs.appendFile(DEBUG_LOG_PATH, logLine, 'utf8');
+  } catch {
+    // Silently fail - don't break plugin if can't write log
+  }
+}
 
 /**
  * Result from finding a file in a directory.

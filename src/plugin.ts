@@ -16,6 +16,7 @@ import { maybeInjectSuperpowersBootstrap } from "./superpowers";
 import {
   getSessionContext,
   extractTextFromParts,
+  injectSyntheticContent,
   type SessionContext,
 } from "./utils";
 import { injectSkillsList, getSkillSummaries } from "./skills";
@@ -103,7 +104,7 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
         return;
       }
 
-      const matchResult = matchSkills(userText, skills);
+      const matchResult = await matchSkills(userText, skills);
 
       if (!matchResult.matched || matchResult.skills.length === 0) {
         return;
@@ -116,11 +117,12 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
       if (matchedSkills.length > 0) {
         const injectionText = formatMatchedSkillsInjection(matchedSkills);
 
-        output.parts.push({
-          type: "text",
-          text: injectionText,
-          synthetic: true,
-        } as typeof output.parts[number]);
+        const context: SessionContext = {
+          model: output.message.model,
+          agent: output.message.agent,
+        };
+
+        await injectSyntheticContent(client, sessionID, injectionText, context);
       }
     },
 

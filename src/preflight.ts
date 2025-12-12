@@ -8,6 +8,7 @@
 import MiniSearch from "minisearch";
 import { createHash } from "node:crypto";
 import type { SkillSummary } from "./skills";
+import { debugLog } from "./utils";
 
 /**
  * Detect if a user message is a meta-conversation that should skip skill matching.
@@ -21,31 +22,36 @@ import type { SkillSummary } from "./skills";
  * @param message - The user's message to evaluate
  * @returns true if this is a meta-conversation that should skip skill matching
  */
-export function isMetaConversation(message: string): boolean {
+export async function isMetaConversation(message: string): Promise<boolean> {
   const trimmed = message.trim();
   
   // Empty messages are meta
   if (!trimmed) {
+    await debugLog("Meta-conversation detected: empty message");
     return true;
   }
   
   // Short approvals: yes, no, ok, sure, nope, yep, yeah, nah
   if (/^(yes|no|ok|sure|nope|yep|yeah|nah)\s*$/i.test(trimmed)) {
+    await debugLog("Meta-conversation detected: short approval", { message: trimmed });
     return true;
   }
   
   // Numbered responses: "1", "2.", "3 ", etc.
   if (/^\d+(\.|\s|$)/.test(trimmed)) {
+    await debugLog("Meta-conversation detected: numbered response", { message: trimmed });
     return true;
   }
   
   // Questions to assistant (case insensitive)
   if (/^(what|why|how|when|where|who|can you|could you|would you|do you)/i.test(trimmed)) {
+    await debugLog("Meta-conversation detected: question to assistant", { message: trimmed });
     return true;
   }
   
   // Meta-discussion phrases (case insensitive)
   if (/(what do you think|your thoughts|any ideas|suggestions|recommend)/i.test(trimmed)) {
+    await debugLog("Meta-conversation detected: meta-discussion phrase", { message: trimmed });
     return true;
   }
   
@@ -116,12 +122,12 @@ export function buildSkillSearchIndex(skills: SkillSummary[]): MiniSearch<SkillD
  * @param threshold - Minimum score threshold for matches
  * @returns Array of skill matches with scores
  */
-export function querySkillIndex(
+export async function querySkillIndex(
   index: MiniSearch<SkillDocument>,
   query: string,
   topK: number,
   threshold: number
-): SkillMatch[] {
+): Promise<SkillMatch[]> {
   const results = index.search(query, { boost: { name: 2 }, fuzzy: 0.2, prefix: true });
 
   // Filter by threshold and take top K
@@ -133,7 +139,7 @@ export function querySkillIndex(
       score: result.score,
     }));
 
-  console.debug("Skill match scores:", matches);
+  await debugLog("Skill match scores", matches);
   return matches;
 }
 
@@ -193,47 +199,57 @@ export interface MatchResult {
  * @param availableSkills - Available skill summaries to match against
  * @returns MatchResult with matched skills and reason
  */
-export function matchSkills(
+export async function matchSkills(
   userMessage: string,
   availableSkills: SkillSummary[]
-): MatchResult {
+): Promise<MatchResult> {
+  await debugLog("matchSkills entry", { message: userMessage, skillCount: availableSkills.length });
+
   // Step 1: Check heuristic gate
-  if (isMetaConversation(userMessage)) {
-    return {
+  if (await isMetaConversation(userMessage)) {
+    const result = {
       matched: false,
       skills: [],
       reason: "Meta-conversation detected",
     };
+    await debugLog("matchSkills exit (meta-conversation)", result);
+    return result;
   }
 
   // Handle empty skills list
   if (availableSkills.length === 0) {
-    return {
+    const result = {
       matched: false,
       skills: [],
       reason: "No skills available",
     };
+    await debugLog("matchSkills exit (no skills available)", result);
+    return result;
   }
 
   // Step 2: Get or build index
   const index = getOrBuildIndex(availableSkills);
 
   // Step 3: Query index (top 5 results, threshold 5.0)
-  const matches = querySkillIndex(index, userMessage, 5, 5.0);
+  const matches = await querySkillIndex(index, userMessage, 5, 5.0);
 
   // Step 4: Return result
   if (matches.length > 0) {
-    return {
+    const result = {
       matched: true,
       skills: matches.map((m) => m.name),
       reason: "Matched via local search",
     };
+    await debugLog("matchSkills exit (skills matched)", result);
+    return result;
   }
 
   // Step 5: No skills found
-  return {
+  const result = {
     matched: false,
     skills: [],
     reason: "No relevant skills found",
   };
+  await debugLog("matchSkills exit (no matches)", result);
+  return result;
 }

@@ -1,0 +1,6 @@
+{
+  "$schema": "https://opencode.ai/opencode.schema.json",
+  "plugin": [
+    "./src/plugin.ts"
+  ]
+}
