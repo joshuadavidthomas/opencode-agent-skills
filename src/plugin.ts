@@ -49,14 +49,10 @@ If no skills are needed for this request, proceed without activation.
 }
 
 export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
-  // Initialize debug logging to .debug/ directory
   await initDebugLog(directory);
 
-  // Pre-compute skill embeddings in background (non-blocking)
-  // Model loading and embedding generation happens asynchronously
   const skills = await getSkillSummaries(directory);
   precomputeSkillEmbeddings(skills).catch(err => {
-    // Don't block plugin startup on embedding failures
     console.error("Failed to pre-compute skill embeddings:", err);
   });
 
@@ -66,7 +62,6 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
       const isFirstMessage = !setupCompleteSessions.has(sessionID);
 
       if (isFirstMessage) {
-        // Check if skills content was already injected (handles plugin reload/reconnection)
         try {
           const existing = await client.session.messages({
             path: { id: sessionID },
@@ -86,7 +81,6 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
             }
           }
         } catch {
-          // On error, treat as first message
         }
       }
 
@@ -101,11 +95,9 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
         await maybeInjectSuperpowersBootstrap(directory, client, sessionID, context);
         await injectSkillsList(directory, client, sessionID, context);
 
-        // First message - no skill matching yet
         return;
       }
 
-      // Second+ messages: Try client-side skill matching
       const userText = extractTextFromParts(output.parts);
       if (!userText) {
         return;

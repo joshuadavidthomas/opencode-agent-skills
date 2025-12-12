@@ -2,18 +2,8 @@ import type { PluginInput } from "@opencode-ai/plugin";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-/**
- * Debug log file path - set by plugin during initialization.
- * Session-specific with timestamp.
- */
 let DEBUG_LOG_PATH: string | null = null;
 
-/**
- * Initialize debug logging directory.
- * Creates .debug/ subdirectory in plugin directory for session logs.
- * 
- * @param pluginDirectory - Plugin installation directory
- */
 export async function initDebugLog(pluginDirectory: string): Promise<void> {
   try {
     const debugDir = path.join(pluginDirectory, '.debug');
@@ -22,18 +12,10 @@ export async function initDebugLog(pluginDirectory: string): Promise<void> {
     const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
     DEBUG_LOG_PATH = path.join(debugDir, `skills-debug-${timestamp}.log`);
   } catch {
-    // Silently fail - logging is optional
     DEBUG_LOG_PATH = null;
   }
 }
 
-/**
- * Write debug log entry to session-specific file.
- * Silently fails if can't write (doesn't break plugin).
- * 
- * @param message - Log message
- * @param data - Optional data to JSON-stringify
- */
 export async function debugLog(message: string, data?: any): Promise<void> {
   if (!DEBUG_LOG_PATH) return;
   
@@ -42,7 +24,6 @@ export async function debugLog(message: string, data?: any): Promise<void> {
     const logLine = `[${timestamp}] ${message}${data ? ': ' + JSON.stringify(data, null, 2) : ''}\n`;
     await fs.appendFile(DEBUG_LOG_PATH, logLine, 'utf8');
   } catch {
-    // Silently fail - don't break plugin if can't write log
   }
 }
 
@@ -276,23 +257,12 @@ export async function getSessionContext(
   return undefined;
 }
 
-/**
- * Part type from @opencode-ai/sdk - simplified for text extraction.
- */
 interface PartLike {
   type: string;
   text?: string;
   synthetic?: boolean;
 }
 
-/**
- * Extract user text content from message parts.
- * Filters to text-type parts that are not synthetic (user-authored),
- * then concatenates their text values.
- *
- * @param parts - Array of message parts
- * @returns Concatenated text from non-synthetic text parts
- */
 export function extractTextFromParts(parts: PartLike[]): string {
   return parts
     .filter((part): part is PartLike & { type: "text"; text: string } =>

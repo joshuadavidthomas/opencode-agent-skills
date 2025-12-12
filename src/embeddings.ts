@@ -1,26 +1,15 @@
-/**
- * Embedding generation for semantic skill matching.
- *
- * Uses all-MiniLM-L6-v2 with q8 quantization for optimal balance.
- */
-
 import * as crypto from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { homedir } from "node:os";
 import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
 
-/** Hardcoded model configuration */
 const MODEL_NAME = "Xenova/all-MiniLM-L6-v2";
 const QUANTIZATION = "q8";
 
-/** Module-level model instance (lazy loaded) */
 let model: FeatureExtractionPipeline | null = null;
 let modelPromise: Promise<void> | null = null;
 
-/**
- * Ensure the model is loaded (lazy initialization).
- */
 async function ensureModel(): Promise<void> {
   if (model) return;
   if (!modelPromise) {
@@ -31,9 +20,6 @@ async function ensureModel(): Promise<void> {
   await modelPromise;
 }
 
-/**
- * Get cache file path for an embedding.
- */
 function getCachePath(contentHash: string): string {
   const xdgCacheHome = process.env.XDG_CACHE_HOME;
   const baseDir = xdgCacheHome
@@ -44,12 +30,7 @@ function getCachePath(contentHash: string): string {
 
 /**
  * Generate an embedding for the given name and description.
- *
  * Results are cached to disk based on content hash.
- *
- * @param name - Skill name
- * @param description - Skill description
- * @returns 384-dimensional embedding vector
  */
 export async function getEmbedding(name: string, description: string): Promise<Float32Array> {
   await ensureModel();
@@ -59,7 +40,6 @@ export async function getEmbedding(name: string, description: string): Promise<F
   const hash = crypto.createHash("sha256").update(text).digest("hex");
   const cachePath = getCachePath(hash);
 
-  // Try cache first
   try {
     const buffer = await fs.readFile(cachePath);
     return new Float32Array(
@@ -68,24 +48,16 @@ export async function getEmbedding(name: string, description: string): Promise<F
       buffer.byteLength / Float32Array.BYTES_PER_ELEMENT,
     );
   } catch {
-    // Cache miss, generate new embedding
+    // Generate new embedding
   }
 
   // Generate embedding
   const result = await model(text, { pooling: "mean", normalize: true });
 
-  let embedding: Float32Array;
-  if (result.data instanceof Float32Array) {
-    embedding = result.data;
-  } else if (ArrayBuffer.isView(result.data)) {
-    embedding = new Float32Array(Array.from(result.data as unknown as ArrayLike<number>));
-  } else if (Array.isArray(result.data)) {
-    embedding = new Float32Array(result.data);
-  } else {
-    throw new Error(`Unexpected result data type: ${typeof result.data}`);
-  }
+  const embedding = result.data instanceof Float32Array
+    ? result.data
+    : new Float32Array(Array.from(result.data as ArrayLike<number>));
 
-  // Cache the result
   await fs.mkdir(path.dirname(cachePath), { recursive: true });
   await fs.writeFile(cachePath, Buffer.from(embedding.buffer, embedding.byteOffset, embedding.byteLength));
 
@@ -94,10 +66,6 @@ export async function getEmbedding(name: string, description: string): Promise<F
 
 /**
  * Compute cosine similarity between two embedding vectors.
- *
- * @param a - First embedding
- * @param b - Second embedding
- * @returns Similarity score between -1 and 1
  */
 export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
   if (a.length !== b.length) {
@@ -109,11 +77,8 @@ export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
   let normB = 0;
 
   for (let i = 0; i < a.length; i++) {
-    const valA = a[i];
-    const valB = b[i];
-    if (valA === undefined || valB === undefined) {
-      throw new Error(`Unexpected undefined value at index ${i}`);
-    }
+    const valA = a[i]!;
+    const valB = b[i]!;
     dotProduct += valA * valB;
     normA += valA * valA;
     normB += valB * valB;
