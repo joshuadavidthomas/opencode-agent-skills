@@ -6,6 +6,7 @@
  */
 
 import MiniSearch from "minisearch";
+import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import { createHash } from "node:crypto";
 import type { SkillSummary } from "./skills";
 import { debugLog } from "./utils";
@@ -91,6 +92,21 @@ const STOPWORDS = new Set([
 
 /** Module-level cache for skill search index */
 let cachedIndex: CachedSkillIndex | null = null;
+
+/**
+ * Cached skill embeddings with content hash.
+ */
+interface CachedSkillEmbeddings {
+  hash: string;
+  embeddings: Float32Array[];
+  skills: SkillSummary[];
+}
+
+/** Module-level cache for skill embeddings */
+let cachedEmbeddings: CachedSkillEmbeddings | null = null;
+
+/** Module-level embedder pipeline (initialized once) */
+let embedder: FeatureExtractionPipeline | null = null;
 
 /**
  * Build a MiniSearch index over skills.
@@ -180,6 +196,123 @@ function hashSkills(skills: SkillSummary[]): string {
 }
 
 /**
+ * Initialize the embedder pipeline once.
+ * Downloads model on first use (~17MB).
+ */
+async function initEmbedder(): Promise<FeatureExtractionPipeline> {
+  if (!embedder) {
+    await debugLog("Initializing embedder model (paraphrase-MiniLM-L3-v2)");
+    embedder = await pipeline(
+      'feature-extraction',
+      'Xenova/paraphrase-MiniLM-L3-v2',
+      { 
+        dtype: 'q8',  // INT8 quantization
+        device: 'cpu'  // CPU backend for Bun (wasm not supported)
+      }
+    );
+    await debugLog("Embedder initialized successfully");
+  }
+  return embedder;
+}
+
+/**
+ * Generate embedding for a text string.
+ * Returns normalized Float32Array for cosine similarity.
+ */
+async function embedText(text: string): Promise<Float32Array> {
+  const embedder = await initEmbedder();
+  
+  const output = await embedder(text, {
+    pooling: 'mean',
+    normalize: true
+  });
+  
+  return output.data as Float32Array;
+}
+
+/**
+ * Compute cosine similarity between two normalized embeddings.
+ * Since embeddings are normalized, this is just the dot product.
+ */
+function cosineSimilarity(a: Float32Array, b: Float32Array): number {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) {
+    sum += a[i]! * b[i]!;
+  }
+  return sum;
+}
+
+/**
+ * Get or build skill embeddings, using cache if skills haven't changed.
+ * Pre-computes embeddings for all skills at startup.
+ */
+export async function getOrBuildEmbeddings(skills: SkillSummary[]): Promise<CachedSkillEmbeddings> {
+  const hash = hashSkills(skills);
+  
+  if (cachedEmbeddings && cachedEmbeddings.hash === hash) {
+    await debugLog("Using cached skill embeddings", { skillCount: skills.length });
+    return cachedEmbeddings;
+  }
+  
+  await debugLog("Building skill embeddings", { skillCount: skills.length });
+  
+  // Embed all skills (name + description combined)
+  const texts = skills.map(s => `${s.name}: ${s.description}`);
+  const embeddings: Float32Array[] = [];
+  
+  for (const text of texts) {
+    const embedding = await embedText(text);
+    embeddings.push(embedding);
+  }
+  
+  cachedEmbeddings = { hash, embeddings, skills };
+  await debugLog("Skill embeddings cached", { skillCount: skills.length, dimensions: embeddings[0]?.length });
+  
+  return cachedEmbeddings;
+}
+
+/**
+ * Match skills using semantic similarity search.
+ * Computes query embedding and finds skills with highest cosine similarity.
+ * 
+ * @param userMessage - User's message to match
+ * @param availableSkills - Available skills to match against
+ * @param topK - Maximum number of results
+ * @param threshold - Minimum similarity threshold (0-1, typically 0.3-0.5)
+ * @returns Array of skill matches with similarity scores
+ */
+export async function semanticMatchSkills(
+  userMessage: string,
+  availableSkills: SkillSummary[],
+  topK: number = 5,
+  threshold: number = 0.4
+): Promise<SkillMatch[]> {
+  await debugLog("Semantic matching start", { query: userMessage, skillCount: availableSkills.length });
+
+  // Get or build embeddings for all skills
+  const skillData = await getOrBuildEmbeddings(availableSkills);
+  
+  // Embed the query
+  const queryEmbedding = await embedText(userMessage);
+  
+  // Compute cosine similarity with each skill
+  const similarities = skillData.embeddings.map((skillEmbedding, index) => ({
+    name: skillData.skills[index]!.name,
+    score: cosineSimilarity(queryEmbedding, skillEmbedding)
+  }));
+  
+  // Filter by threshold and sort by score
+  const matches = similarities
+    .filter(s => s.score >= threshold)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
+  
+  await debugLog("Semantic match scores", matches);
+  
+  return matches;
+}
+
+/**
  * Get or build the skill search index, using cache if skills haven't changed.
  *
  * @param skills - Array of skill summaries
@@ -250,18 +383,15 @@ export async function matchSkills(
     return result;
   }
 
-  // Step 2: Get or build index
-  const index = getOrBuildIndex(availableSkills);
+  // Step 2: Query using semantic search (top 5 results, threshold 0.35)
+  const matches = await semanticMatchSkills(userMessage, availableSkills, 5, 0.35);
 
-  // Step 3: Query index (top 5 results, threshold 15.0)
-  const matches = await querySkillIndex(index, userMessage, 5, 15.0);
-
-  // Step 4: Return result
+  // Step 3: Return result
   if (matches.length > 0) {
     const result = {
       matched: true,
       skills: matches.map((m) => m.name),
-      reason: "Matched via local search",
+      reason: "Matched via semantic search",
     };
     await debugLog("matchSkills exit (skills matched)", result);
     return result;

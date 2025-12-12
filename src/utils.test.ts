@@ -603,7 +603,7 @@ describe("matchSkills", () => {
       expect(result.matched).toBe(true);
       expect(result.skills.length).toBeGreaterThan(0);
       expect(result.skills).toContain("git-helper");
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
 
     test("matches PDF tasks", async () => {
@@ -612,7 +612,7 @@ describe("matchSkills", () => {
       expect(result.matched).toBe(true);
       expect(result.skills.length).toBeGreaterThan(0);
       expect(result.skills).toContain("pdf");
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
 
     test("matches document editing tasks", async () => {
@@ -621,7 +621,7 @@ describe("matchSkills", () => {
       expect(result.matched).toBe(true);
       expect(result.skills.length).toBeGreaterThan(0);
       expect(result.skills).toContain("docx");
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
 
     test("matches brainstorming tasks", async () => {
@@ -630,7 +630,7 @@ describe("matchSkills", () => {
       expect(result.matched).toBe(true);
       expect(result.skills.length).toBeGreaterThan(0);
       expect(result.skills).toContain("brainstorming");
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
 
     test("matches frontend design tasks", async () => {
@@ -639,7 +639,7 @@ describe("matchSkills", () => {
       expect(result.matched).toBe(true);
       expect(result.skills.length).toBeGreaterThan(0);
       expect(result.skills).toContain("frontend-design");
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
   });
 
@@ -651,7 +651,7 @@ describe("matchSkills", () => {
       expect(result.skills.length).toBeGreaterThan(0);
       // At least one skill should match
       expect(result.skills.some((s) => s === "frontend-design" || s === "brainstorming")).toBe(true);
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
 
     test("returns at most 5 skills (respects topK limit)", async () => {
@@ -833,7 +833,7 @@ describe("matchSkills", () => {
       expect(result.matched).toBe(true);
       expect(result.skills.length).toBeGreaterThan(0);
       expect(result.skills).toContain("git-helper");
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
 
     test("matches PDF tasks", async () => {
@@ -842,7 +842,7 @@ describe("matchSkills", () => {
       expect(result.matched).toBe(true);
       expect(result.skills.length).toBeGreaterThan(0);
       expect(result.skills).toContain("pdf");
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
 
     test("matches document editing tasks", async () => {
@@ -851,7 +851,7 @@ describe("matchSkills", () => {
       expect(result.matched).toBe(true);
       expect(result.skills.length).toBeGreaterThan(0);
       expect(result.skills).toContain("docx");
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
 
     test("matches brainstorming tasks", async () => {
@@ -860,7 +860,7 @@ describe("matchSkills", () => {
       expect(result.matched).toBe(true);
       expect(result.skills.length).toBeGreaterThan(0);
       expect(result.skills).toContain("brainstorming");
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
 
     test("matches frontend design tasks", async () => {
@@ -869,7 +869,7 @@ describe("matchSkills", () => {
       expect(result.matched).toBe(true);
       expect(result.skills.length).toBeGreaterThan(0);
       expect(result.skills).toContain("frontend-design");
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
   });
 
@@ -879,8 +879,9 @@ describe("matchSkills", () => {
       
       expect(result.matched).toBe(true);
       expect(result.skills.length).toBeGreaterThan(0);
+      // At least one skill should match
       expect(result.skills.some((s) => s === "frontend-design" || s === "brainstorming")).toBe(true);
-      expect(result.reason).toBe("Matched via local search");
+      expect(result.reason).toBe("Matched via semantic search");
     });
 
     test("returns at most 5 skills (respects topK limit)", async () => {
