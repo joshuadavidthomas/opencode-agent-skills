@@ -81,6 +81,14 @@ interface CachedSkillIndex {
   index: MiniSearch<SkillDocument>;
 }
 
+/** Common English stopwords to filter from search queries */
+const STOPWORDS = new Set([
+  'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from',
+  'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'that', 'the',
+  'to', 'was', 'will', 'with', 'this', 'these', 'those', 'they',
+  's', 't', 'd', 'm', 're', 've', 'll'  // Common contractions
+]);
+
 /** Module-level cache for skill search index */
 let cachedIndex: CachedSkillIndex | null = null;
 
@@ -97,8 +105,23 @@ export function buildSkillSearchIndex(skills: SkillSummary[]): MiniSearch<SkillD
     storeFields: ["name"],
     searchOptions: {
       boost: { name: 2 },
-      fuzzy: 0.2,
+      fuzzy: (term: string) => term.length >= 5 ? 0.2 : false,
       prefix: true,
+      processTerm: (term) => {
+        const lower = term.toLowerCase();
+        
+        // Filter stopwords
+        if (STOPWORDS.has(lower)) {
+          return null;
+        }
+        
+        // Filter terms shorter than 3 characters
+        if (lower.length < 3) {
+          return null;
+        }
+        
+        return lower;
+      },
     },
   });
 
@@ -128,7 +151,7 @@ export async function querySkillIndex(
   topK: number,
   threshold: number
 ): Promise<SkillMatch[]> {
-  const results = index.search(query, { boost: { name: 2 }, fuzzy: 0.2, prefix: true });
+  const results = index.search(query, { boost: { name: 2 }, fuzzy: (term: string) => term.length >= 5 ? 0.2 : false, prefix: true });
 
   // Filter by threshold and take top K
   const matches = results
@@ -230,8 +253,8 @@ export async function matchSkills(
   // Step 2: Get or build index
   const index = getOrBuildIndex(availableSkills);
 
-  // Step 3: Query index (top 5 results, threshold 10.0)
-  const matches = await querySkillIndex(index, userMessage, 5, 10.0);
+  // Step 3: Query index (top 5 results, threshold 15.0)
+  const matches = await querySkillIndex(index, userMessage, 5, 15.0);
 
   // Step 4: Return result
   if (matches.length > 0) {
