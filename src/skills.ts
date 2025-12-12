@@ -335,6 +335,29 @@ export async function listSkillFiles(skillPath: string, maxDepth: number = 3): P
 }
 
 /**
+ * Skill summary for preflight evaluation.
+ */
+export interface SkillSummary {
+  name: string;
+  description: string;
+}
+
+/**
+ * Get summaries of all available skills (name + description only).
+ * Used by preflight LLM call to evaluate which skills are relevant.
+ *
+ * @param directory - Project directory to discover skills from
+ * @returns Array of skill summaries
+ */
+export async function getSkillSummaries(directory: string): Promise<SkillSummary[]> {
+  const skillsByName = await discoverAllSkills(directory);
+  return Array.from(skillsByName.values()).map(skill => ({
+    name: skill.name,
+    description: skill.description,
+  }));
+}
+
+/**
  * Inject the available skills list into a session.
  * Used on session start and after compaction.
  */

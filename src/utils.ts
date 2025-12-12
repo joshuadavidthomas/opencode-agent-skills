@@ -231,3 +231,32 @@ export async function getSessionContext(
 
   return undefined;
 }
+
+/**
+ * Part type from @opencode-ai/sdk - simplified for text extraction.
+ */
+interface PartLike {
+  type: string;
+  text?: string;
+  synthetic?: boolean;
+}
+
+/**
+ * Extract user text content from message parts.
+ * Filters to text-type parts that are not synthetic (user-authored),
+ * then concatenates their text values.
+ *
+ * @param parts - Array of message parts
+ * @returns Concatenated text from non-synthetic text parts
+ */
+export function extractTextFromParts(parts: PartLike[]): string {
+  return parts
+    .filter((part): part is PartLike & { type: "text"; text: string } =>
+      part.type === "text" &&
+      typeof part.text === "string" &&
+      !part.synthetic
+    )
+    .map(part => part.text)
+    .join("\n")
+    .trim();
+}
