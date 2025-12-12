@@ -74,7 +74,9 @@ export class EmbeddingService {
    */
   private async loadModel(): Promise<void> {
     try {
-      this.model = await pipeline("feature-extraction", this.modelConfig.name);
+      this.model = await pipeline("feature-extraction", this.modelConfig.name, {
+        dtype: this.modelConfig.quantization,
+      });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : String(error);

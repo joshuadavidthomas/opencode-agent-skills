@@ -22,7 +22,7 @@ import {
 } from "./utils";
 import { injectSkillsList, getSkillSummaries } from "./skills";
 import { GetAvailableSkills, ReadSkillFile, RunSkillScript, UseSkill } from "./tools";
-import { matchSkills } from "./preflight";
+import { matchSkills, precomputeSkillEmbeddings } from "./preflight";
 
 const setupCompleteSessions = new Set<string>();
 
@@ -51,6 +51,14 @@ If no skills are needed for this request, proceed without activation.
 export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
   // Initialize debug logging to .debug/ directory
   await initDebugLog(directory);
+
+  // Pre-compute skill embeddings in background (non-blocking)
+  // Model loading and embedding generation happens asynchronously
+  const skills = await getSkillSummaries(directory);
+  precomputeSkillEmbeddings(skills).catch(err => {
+    // Don't block plugin startup on embedding failures
+    console.error("Failed to pre-compute skill embeddings:", err);
+  });
 
   return {
     "chat.message": async (input, output) => {

@@ -6,10 +6,11 @@
  */
 
 import MiniSearch from "minisearch";
-import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import { createHash } from "node:crypto";
 import type { SkillSummary } from "./skills";
 import { debugLog } from "./utils";
+import { EmbeddingService } from "./embeddings/service";
+import { DEFAULT_MODEL } from "./embeddings/models";
 
 /**
  * Type for skill documents in the search index.
@@ -45,20 +46,33 @@ const STOPWORDS = new Set([
 /** Module-level cache for skill search index */
 let cachedIndex: CachedSkillIndex | null = null;
 
+/** Module-level embedding service (starts loading immediately) */
+const embeddingService = new EmbeddingService(DEFAULT_MODEL);
+
 /**
- * Cached skill embeddings with content hash.
+ * Pre-compute embeddings for all skills in the background.
+ * Call this at plugin startup to trigger eager embedding generation.
+ * Non-blocking - runs asynchronously after model is loaded.
+ *
+ * @param skills - Array of skill summaries to pre-compute embeddings for
  */
-interface CachedSkillEmbeddings {
-  hash: string;
-  embeddings: Float32Array[];
-  skills: SkillSummary[];
+export async function precomputeSkillEmbeddings(skills: SkillSummary[]): Promise<void> {
+  // Wait for model to be ready first
+  await embeddingService.waitUntilReady();
+  
+  // Generate embeddings for all skills (triggers caching)
+  await Promise.all(
+    skills.map(skill => 
+      embeddingService.getEmbedding(skill.name, skill.description)
+        .catch(err => {
+          // Don't fail if individual embedding fails
+          debugLog(`Failed to pre-compute embedding for ${skill.name}`, err);
+        })
+    )
+  );
+  
+  await debugLog("Pre-computed embeddings for all skills", { count: skills.length });
 }
-
-/** Module-level cache for skill embeddings */
-let cachedEmbeddings: CachedSkillEmbeddings | null = null;
-
-/** Module-level embedder pipeline (initialized once) */
-let embedder: FeatureExtractionPipeline | null = null;
 
 /**
  * Build a MiniSearch index over skills.
@@ -147,81 +161,7 @@ function hashSkills(skills: SkillSummary[]): string {
   return createHash("sha256").update(content).digest("hex");
 }
 
-/**
- * Initialize the embedder pipeline once.
- * Downloads model on first use (~17MB).
- */
-async function initEmbedder(): Promise<FeatureExtractionPipeline> {
-  if (!embedder) {
-    await debugLog("Initializing embedder model (paraphrase-MiniLM-L3-v2)");
-    embedder = await pipeline(
-      'feature-extraction',
-      'Xenova/paraphrase-MiniLM-L3-v2',
-      { 
-        dtype: 'q8',  // INT8 quantization
-        device: 'cpu'  // CPU backend for Bun (wasm not supported)
-      }
-    );
-    await debugLog("Embedder initialized successfully");
-  }
-  return embedder;
-}
 
-/**
- * Generate embedding for a text string.
- * Returns normalized Float32Array for cosine similarity.
- */
-async function embedText(text: string): Promise<Float32Array> {
-  const embedder = await initEmbedder();
-  
-  const output = await embedder(text, {
-    pooling: 'mean',
-    normalize: true
-  });
-  
-  return output.data as Float32Array;
-}
-
-/**
- * Compute cosine similarity between two normalized embeddings.
- * Since embeddings are normalized, this is just the dot product.
- */
-function cosineSimilarity(a: Float32Array, b: Float32Array): number {
-  let sum = 0;
-  for (let i = 0; i < a.length; i++) {
-    sum += a[i]! * b[i]!;
-  }
-  return sum;
-}
-
-/**
- * Get or build skill embeddings, using cache if skills haven't changed.
- * Pre-computes embeddings for all skills at startup.
- */
-export async function getOrBuildEmbeddings(skills: SkillSummary[]): Promise<CachedSkillEmbeddings> {
-  const hash = hashSkills(skills);
-  
-  if (cachedEmbeddings && cachedEmbeddings.hash === hash) {
-    await debugLog("Using cached skill embeddings", { skillCount: skills.length });
-    return cachedEmbeddings;
-  }
-  
-  await debugLog("Building skill embeddings", { skillCount: skills.length });
-  
-  // Embed all skills (name + description combined)
-  const texts = skills.map(s => `${s.name}: ${s.description}`);
-  const embeddings: Float32Array[] = [];
-  
-  for (const text of texts) {
-    const embedding = await embedText(text);
-    embeddings.push(embedding);
-  }
-  
-  cachedEmbeddings = { hash, embeddings, skills };
-  await debugLog("Skill embeddings cached", { skillCount: skills.length, dimensions: embeddings[0]?.length });
-  
-  return cachedEmbeddings;
-}
 
 /**
  * Match skills using semantic similarity search.
@@ -241,17 +181,28 @@ export async function semanticMatchSkills(
 ): Promise<SkillMatch[]> {
   await debugLog("Semantic matching start", { query: userMessage, skillCount: availableSkills.length });
 
-  // Get or build embeddings for all skills
-  const skillData = await getOrBuildEmbeddings(availableSkills);
+  // Check if embedding service is ready
+  if (!embeddingService.isReady()) {
+    await debugLog("Embedding model not ready, skipping semantic matching");
+    return [];
+  }
   
-  // Embed the query
-  const queryEmbedding = await embedText(userMessage);
+  // Embed the query (pass as description with empty name to match old behavior)
+  const queryEmbedding = await embeddingService.getEmbedding("", userMessage);
   
-  // Compute cosine similarity with each skill
-  const similarities = skillData.embeddings.map((skillEmbedding, index) => ({
-    name: skillData.skills[index]!.name,
-    score: cosineSimilarity(queryEmbedding, skillEmbedding)
-  }));
+  // Embed all skills and compute cosine similarity
+  const similarities: SkillMatch[] = [];
+  
+  for (const skill of availableSkills) {
+    // Pass name and description separately - service will combine them
+    const skillEmbedding = await embeddingService.getEmbedding(skill.name, skill.description);
+    const score = embeddingService.cosineSimilarity(queryEmbedding, skillEmbedding);
+    
+    similarities.push({
+      name: skill.name,
+      score,
+    });
+  }
   
   // Filter by threshold and sort by score
   const matches = similarities
@@ -322,8 +273,8 @@ export async function matchSkills(
     return result;
   }
 
-  // Step 2: Query using semantic search (top 5 results, threshold 0.35)
-  const matches = await semanticMatchSkills(userMessage, availableSkills, 5, 0.35);
+  // Step 2: Query using semantic search (top 5 results, threshold 0.30)
+  const matches = await semanticMatchSkills(userMessage, availableSkills, 5, 0.30);
 
   // Step 3: Return result
   if (matches.length > 0) {
