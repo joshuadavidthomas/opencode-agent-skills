@@ -7,7 +7,7 @@ import type { SkillSummary } from "./skills";
 
 const MODEL_NAME = "Xenova/all-MiniLM-L6-v2";
 const QUANTIZATION = "q8";
-const SIMILARITY_THRESHOLD = 0.30;
+const SIMILARITY_THRESHOLD = 0.35;
 const TOP_K = 5;
 
 let model: FeatureExtractionPipeline | null = null;
