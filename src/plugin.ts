@@ -17,6 +17,7 @@ import {
   getSessionContext,
   extractTextFromParts,
   injectSyntheticContent,
+  initDebugLog,
   type SessionContext,
 } from "./utils";
 import { injectSkillsList, getSkillSummaries } from "./skills";
@@ -48,6 +49,9 @@ If no skills are needed for this request, proceed without activation.
 }
 
 export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
+  // Initialize debug logging to .debug/ directory
+  await initDebugLog(directory);
+
   return {
     "chat.message": async (input, output) => {
       const sessionID = output.message.sessionID;

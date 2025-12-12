@@ -230,8 +230,8 @@ export async function matchSkills(
   // Step 2: Get or build index
   const index = getOrBuildIndex(availableSkills);
 
-  // Step 3: Query index (top 5 results, threshold 5.0)
-  const matches = await querySkillIndex(index, userMessage, 5, 5.0);
+  // Step 3: Query index (top 5 results, threshold 10.0)
+  const matches = await querySkillIndex(index, userMessage, 5, 10.0);
 
   // Step 4: Return result
   if (matches.length > 0) {

@@ -1,17 +1,31 @@
 import type { PluginInput } from "@opencode-ai/plugin";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import * as os from "node:os";
 
 /**
- * Debug log file path - session-specific with timestamp.
- * Created once per plugin load.
+ * Debug log file path - set by plugin during initialization.
+ * Session-specific with timestamp.
  */
-const DEBUG_LOG_PATH = path.join(
-  os.homedir(),
-  '.config/opencode',
-  `skills-debug-${new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '')}.log`
-);
+let DEBUG_LOG_PATH: string | null = null;
+
+/**
+ * Initialize debug logging directory.
+ * Creates .debug/ subdirectory in plugin directory for session logs.
+ * 
+ * @param pluginDirectory - Plugin installation directory
+ */
+export async function initDebugLog(pluginDirectory: string): Promise<void> {
+  try {
+    const debugDir = path.join(pluginDirectory, '.debug');
+    await fs.mkdir(debugDir, { recursive: true });
+    
+    const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
+    DEBUG_LOG_PATH = path.join(debugDir, `skills-debug-${timestamp}.log`);
+  } catch {
+    // Silently fail - logging is optional
+    DEBUG_LOG_PATH = null;
+  }
+}
 
 /**
  * Write debug log entry to session-specific file.
@@ -21,6 +35,8 @@ const DEBUG_LOG_PATH = path.join(
  * @param data - Optional data to JSON-stringify
  */
 export async function debugLog(message: string, data?: any): Promise<void> {
+  if (!DEBUG_LOG_PATH) return;
+  
   try {
     const timestamp = new Date().toISOString();
     const logLine = `[${timestamp}] ${message}${data ? ': ' + JSON.stringify(data, null, 2) : ''}\n`;
