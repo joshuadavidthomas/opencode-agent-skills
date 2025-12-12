@@ -14,12 +14,16 @@ export async function precomputeSkillEmbeddings(skills: SkillSummary[]): Promise
   );
 }
 
-export async function semanticMatchSkills(
+export async function matchSkills(
   userMessage: string,
   availableSkills: SkillSummary[],
   topK: number = 5,
-  threshold: number = 0.4
+  threshold: number = 0.30
 ): Promise<SkillMatch[]> {
+  if (availableSkills.length === 0) {
+    return [];
+  }
+
   const queryEmbedding = await getEmbedding("", userMessage);
   
   const similarities: SkillMatch[] = [];
@@ -34,45 +38,8 @@ export async function semanticMatchSkills(
     });
   }
   
-  const matches = similarities
+  return similarities
     .filter(s => s.score >= threshold)
     .sort((a, b) => b.score - a.score)
     .slice(0, topK);
-  
-  return matches;
-}
-
-export interface MatchResult {
-  matched: boolean;
-  skills: string[];
-  reason: string;
-}
-
-export async function matchSkills(
-  userMessage: string,
-  availableSkills: SkillSummary[]
-): Promise<MatchResult> {
-  if (availableSkills.length === 0) {
-    return {
-      matched: false,
-      skills: [],
-      reason: "No skills available",
-    };
-  }
-
-  const matches = await semanticMatchSkills(userMessage, availableSkills, 5, 0.30);
-
-  if (matches.length > 0) {
-    return {
-      matched: true,
-      skills: matches.map((m) => m.name),
-      reason: "Matched via semantic search",
-    };
-  }
-
-  return {
-    matched: false,
-    skills: [],
-    reason: "No relevant skills found",
-  };
 }

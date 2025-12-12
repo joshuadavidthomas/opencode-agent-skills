@@ -29,60 +29,47 @@ describe("matchSkills", () => {
 
   describe("task request matching", () => {
     test("matches git-related tasks", async () => {
-      const result = await matchSkills("Help me create a new branch and commit my changes", sampleSkills);
+      const matches = await matchSkills("Help me create a new branch and commit my changes", sampleSkills);
 
-      expect(result.matched).toBe(true);
-      expect(result.skills.length).toBeGreaterThan(0);
-      expect(result.skills).toContain("git-helper");
-      expect(result.reason).toBe("Matched via semantic search");
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.some(m => m.name === "git-helper")).toBe(true);
     });
 
     test("matches PDF tasks", async () => {
-      const result = await matchSkills("Extract tables from this PDF document", sampleSkills);
+      const matches = await matchSkills("Extract tables from this PDF document", sampleSkills);
 
-      expect(result.matched).toBe(true);
-      expect(result.skills.length).toBeGreaterThan(0);
-      expect(result.skills).toContain("pdf");
-      expect(result.reason).toBe("Matched via semantic search");
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.some(m => m.name === "pdf")).toBe(true);
     });
 
     test("matches document editing tasks", async () => {
-      const result = await matchSkills("Edit this Word document and track changes", sampleSkills);
+      const matches = await matchSkills("Edit this Word document and track changes", sampleSkills);
 
-      expect(result.matched).toBe(true);
-      expect(result.skills.length).toBeGreaterThan(0);
-      expect(result.skills).toContain("docx");
-      expect(result.reason).toBe("Matched via semantic search");
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.some(m => m.name === "docx")).toBe(true);
     });
 
     test("matches brainstorming tasks", async () => {
-      const result = await matchSkills("Help me refine this rough idea into a design", sampleSkills);
+      const matches = await matchSkills("Help me refine this rough idea into a design", sampleSkills);
 
-      expect(result.matched).toBe(true);
-      expect(result.skills.length).toBeGreaterThan(0);
-      expect(result.skills).toContain("brainstorming");
-      expect(result.reason).toBe("Matched via semantic search");
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.some(m => m.name === "brainstorming")).toBe(true);
     });
 
     test("matches frontend design tasks", async () => {
-      const result = await matchSkills("Create a production-grade user interface", sampleSkills);
+      const matches = await matchSkills("Create a production-grade user interface", sampleSkills);
 
-      expect(result.matched).toBe(true);
-      expect(result.skills.length).toBeGreaterThan(0);
-      expect(result.skills).toContain("frontend-design");
-      expect(result.reason).toBe("Matched via semantic search");
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.some(m => m.name === "frontend-design")).toBe(true);
     });
   });
 
   describe("multiple skill matching", () => {
     test("can match multiple skills for complex tasks", async () => {
-      const result = await matchSkills("Design a frontend interface and help me brainstorm ideas", sampleSkills);
+      const matches = await matchSkills("Design a frontend interface and help me brainstorm ideas", sampleSkills);
 
-      expect(result.matched).toBe(true);
-      expect(result.skills.length).toBeGreaterThan(0);
-      // At least one skill should match
-      expect(result.skills.some((s) => s === "frontend-design" || s === "brainstorming")).toBe(true);
-      expect(result.reason).toBe("Matched via semantic search");
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.some(m => m.name === "frontend-design" || m.name === "brainstorming")).toBe(true);
     });
 
     test("returns at most 5 skills (respects topK limit)", async () => {
@@ -91,74 +78,64 @@ describe("matchSkills", () => {
         description: "Test skill for matching testing purposes",
       }));
 
-      const result = await matchSkills("testing", manySkills);
-
-      if (result.matched) {
-        expect(result.skills.length).toBeLessThanOrEqual(5);
-      }
+      const matches = await matchSkills("testing", manySkills);
+      expect(matches.length).toBeLessThanOrEqual(5);
     });
   });
 
   describe("edge cases", () => {
-    test("returns no skills available when skill list is empty", async () => {
-      const result = await matchSkills("Help me with git", []);
-
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("No skills available");
+    test("returns empty array when skill list is empty", async () => {
+      const matches = await matchSkills("Help me with git", []);
+      expect(matches).toEqual([]);
     });
 
-    test("returns no relevant skills for unrelated topics", async () => {
-      const result = await matchSkills("xyzabc123qwerty456", sampleSkills);
-
-      expect(result.matched).toBe(false);
-      expect(result.skills).toEqual([]);
-      expect(result.reason).toBe("No relevant skills found");
+    test("returns empty array for unrelated topics", async () => {
+      const matches = await matchSkills("xyzabc123qwerty456", sampleSkills);
+      expect(matches).toEqual([]);
     });
 
     test("handles very long messages", async () => {
       const longMessage = "Create a frontend interface ".repeat(100);
-      const result = await matchSkills(longMessage, sampleSkills);
+      const matches = await matchSkills(longMessage, sampleSkills);
 
-      // Should still work with long messages
-      expect(result.matched).toBe(true);
-      expect(result.skills.length).toBeGreaterThan(0);
+      expect(matches.length).toBeGreaterThan(0);
     });
 
     test("handles messages with special characters", async () => {
-      // After BM25 improvements: stopwords filtered, need substantial query terms
-      const result = await matchSkills("Create git branch for feature work! @#$%^&*()", sampleSkills);
+      const matches = await matchSkills("Create git branch for feature work! @#$%^&*()", sampleSkills);
 
-      expect(result.matched).toBe(true);
-      expect(result.skills).toContain("git-helper");
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.some(m => m.name === "git-helper")).toBe(true);
     });
 
-    test("preserves MatchResult structure", async () => {
-      const result = await matchSkills("Help with git", sampleSkills);
+    test("returns SkillMatch array with name and score", async () => {
+      const matches = await matchSkills("Help with git", sampleSkills);
 
-      expect(result).toHaveProperty("matched");
-      expect(result).toHaveProperty("skills");
-      expect(result).toHaveProperty("reason");
-      expect(typeof result.matched).toBe("boolean");
-      expect(Array.isArray(result.skills)).toBe(true);
-      expect(typeof result.reason).toBe("string");
+      expect(Array.isArray(matches)).toBe(true);
+      if (matches.length > 0) {
+        matches.forEach(match => {
+          expect(match).toHaveProperty("name");
+          expect(match).toHaveProperty("score");
+          expect(typeof match.name).toBe("string");
+          expect(typeof match.score).toBe("number");
+        });
+      }
     });
   });
 
 
   describe("consistency with original behavior", () => {
-    test("returns empty skills array when no match (like makePreflightCallWithTimeout)", async () => {
-      const result = await matchSkills("completely unrelated query xyz123", sampleSkills);
-
-      expect(result.skills).toEqual([]);
+    test("returns empty array when no match", async () => {
+      const matches = await matchSkills("completely unrelated query xyz123", sampleSkills);
+      expect(matches).toEqual([]);
     });
 
     test("returns skill names as strings", async () => {
-      const result = await matchSkills("Help with git", sampleSkills);
+      const matches = await matchSkills("Help with git", sampleSkills);
 
-      if (result.skills.length > 0) {
-        result.skills.forEach((skill) => {
-          expect(typeof skill).toBe("string");
+      if (matches.length > 0) {
+        matches.forEach(match => {
+          expect(typeof match.name).toBe("string");
         });
       }
     });

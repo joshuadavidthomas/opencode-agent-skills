@@ -112,26 +112,24 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
         return;
       }
 
-      const matchResult = await matchSkills(userText, skills);
+      const matches = await matchSkills(userText, skills);
 
-      if (!matchResult.matched || matchResult.skills.length === 0) {
+      if (matches.length === 0) {
         return;
       }
 
       const matchedSkills = skills.filter((s) =>
-        matchResult.skills.includes(s.name)
+        matches.some(m => m.name === s.name)
       );
 
-      if (matchedSkills.length > 0) {
-        const injectionText = formatMatchedSkillsInjection(matchedSkills);
+      const injectionText = formatMatchedSkillsInjection(matchedSkills);
 
-        const context: SessionContext = {
-          model: output.message.model,
-          agent: output.message.agent,
-        };
+      const context: SessionContext = {
+        model: output.message.model,
+        agent: output.message.agent,
+      };
 
-        await injectSyntheticContent(client, sessionID, injectionText, context);
-      }
+      await injectSyntheticContent(client, sessionID, injectionText, context);
     },
 
     event: async ({ event }) => {
