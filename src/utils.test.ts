@@ -1,7 +1,3 @@
-/**
- * Tests for fuzzy matching utilities
- */
-
 import { describe, test, expect } from "bun:test";
 import { levenshtein, findClosestMatch } from "./utils";
 
@@ -82,13 +78,11 @@ describe("findClosestMatch", () => {
 
   test("multiple similar candidates returns best match", () => {
     const candidates = ["test", "testing", "tests"];
-    // "test" should win because it's an exact match
     expect(findClosestMatch("test", candidates)).toBe("test");
   });
 
   test("prefix matching beats substring matching", () => {
     const candidates = ["pdf-reader", "reader-pdf"];
-    // "pdf-reader" starts with "pdf", "reader-pdf" only contains it
     expect(findClosestMatch("pdf", candidates)).toBe("pdf-reader");
   });
 

@@ -13,55 +13,132 @@
 
 import type { Plugin } from "@opencode-ai/plugin";
 import { maybeInjectSuperpowersBootstrap } from "./superpowers";
-import { getSessionContext, type SessionContext } from "./utils";
-import { injectSkillsList } from "./skills";
+import {
+  getSessionContext,
+  injectSyntheticContent,
+  type SessionContext,
+} from "./utils";
+import { injectSkillsList, getSkillSummaries } from "./skills";
 import { GetAvailableSkills, ReadSkillFile, RunSkillScript, UseSkill } from "./tools";
+import { matchSkills, precomputeSkillEmbeddings } from "./embeddings";
+
+const setupCompleteSessions = new Set<string>();
+
+function formatMatchedSkillsInjection(
+  matchedSkills: Array<{ name: string; description: string }>
+): string {
+  const skillLines = matchedSkills
+    .map((s) => `- ${s.name}: ${s.description}`)
+    .join("\n");
+
+  return `<skill-evaluation-required>
+SKILL EVALUATION PROCESS
+
+The following skills may be relevant to your request:
+
+${skillLines}
+
+Step 1 - EVALUATE: Determine if these skills would genuinely help
+Step 2 - DECIDE: Choose which skills (if any) are actually needed
+Step 3 - ACTIVATE: Call use_skill("name") for each chosen skill
+
+If no skills are needed for this request, proceed without activation.
+</skill-evaluation-required>`;
+}
 
 export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
-  const injectedSessions = new Set<string>();
+  const skills = await getSkillSummaries(directory);
+  precomputeSkillEmbeddings(skills).catch(err => {
+    console.error("Failed to pre-compute skill embeddings:", err);
+  });
 
   return {
     "chat.message": async (input, output) => {
       const sessionID = output.message.sessionID;
+      const isFirstMessage = !setupCompleteSessions.has(sessionID);
 
-      // Skip if already injected this session (in-memory fast path)
-      if (injectedSessions.has(sessionID)) return;
+      if (isFirstMessage) {
+        try {
+          const existing = await client.session.messages({
+            path: { id: sessionID },
+          });
 
-      // Check if session already has messages (handles plugin reload/reconnection)
-      try {
-        const existing = await client.session.messages({
-          path: { id: sessionID },
-          query: { limit: 1 }
-        });
+          if (existing.data) {
+            const hasSkillsContent = existing.data.some(msg => {
+              const parts = (msg as any).parts || (msg.info as any).parts;
+              if (!parts) return false;
+              return parts.some((part: any) =>
+                part.type === 'text' && part.text?.includes('<available-skills>')
+              );
+            });
 
-        if (existing.data && existing.data.length > 0) {
-          injectedSessions.add(sessionID);
-          return;
+            if (hasSkillsContent) {
+              setupCompleteSessions.add(sessionID);
+            }
+          }
+        } catch {
         }
-      } catch {
-        // On error, proceed with injection
       }
 
-      injectedSessions.add(sessionID);
+      if (!setupCompleteSessions.has(sessionID)) {
+        setupCompleteSessions.add(sessionID);
 
-      // Use output.message which has the resolved model/agent values.
-      // This ensures our injected noReply message has identical model/agent
-      // to the real user message, preventing mode/model switching.
+        const context: SessionContext = {
+          model: output.message.model,
+          agent: output.message.agent,
+        };
+
+        await maybeInjectSuperpowersBootstrap(directory, client, sessionID, context);
+        await injectSkillsList(directory, client, sessionID, context);
+
+        return;
+      }
+
+      const userText = output.parts
+        .flatMap(part =>
+          part.type === "text" && typeof part.text === "string" && !part.synthetic
+            ? [part.text]
+            : []
+        )
+        .join("\n")
+        .trim();
+
+      if (!userText) {
+        return;
+      }
+
+      const skills = await getSkillSummaries(directory);
+      if (skills.length === 0) {
+        return;
+      }
+
+      const matchedSkills = await matchSkills(userText, skills);
+
+      if (matchedSkills.length === 0) {
+        return;
+      }
+
+      const injectionText = formatMatchedSkillsInjection(matchedSkills);
+
       const context: SessionContext = {
         model: output.message.model,
-        agent: output.message.agent
+        agent: output.message.agent,
       };
 
-      await maybeInjectSuperpowersBootstrap(directory, client, sessionID, context);
-      await injectSkillsList(directory, client, sessionID, context);
+      await injectSyntheticContent(client, sessionID, injectionText, context);
     },
 
     event: async ({ event }) => {
-      if (event.type === 'session.compacted') {
+      if (event.type === "session.compacted") {
         const sessionID = event.properties.sessionID;
         const context = await getSessionContext(client, sessionID);
         await maybeInjectSuperpowersBootstrap(directory, client, sessionID, context);
         await injectSkillsList(directory, client, sessionID, context);
+      }
+
+      if (event.type === "session.deleted") {
+        const sessionID = event.properties.info.id;
+        setupCompleteSessions.delete(sessionID);
       }
     },
 
@@ -70,6 +147,6 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
       read_skill_file: ReadSkillFile(directory, client),
       run_skill_script: RunSkillScript(directory, $),
       use_skill: UseSkill(directory, client),
-    }
+    },
   };
 };

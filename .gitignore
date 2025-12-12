@@ -143,4 +143,8 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/bun,node
 
+# Git worktrees
+.worktrees/
+
 !CLAUDE.md
+.debug/

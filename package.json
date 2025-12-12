@@ -25,6 +25,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@opencode-ai/plugin": "^1.0.115",
     "zod": "^4.1.13"
   },

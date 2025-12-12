@@ -12,7 +12,7 @@ export interface FileDiscoveryResult {
 
 /**
  * Check if a file exists in a directory and return path info.
- * 
+ *
  * @param directory - Directory to check
  * @param relativePath - Relative path to use in result (caller-specific)
  * @param filename - Name of file to look for (e.g., 'SKILL.md')
@@ -47,7 +47,7 @@ export function parseYamlFrontmatter(text: string): Record<string, unknown> {
   let currentObject: Record<string, string> | null = null;
 
   for (const line of lines) {
-      if (line.trim() === '') continue;
+    if (line.trim() === '') continue;
 
     if (line.match(/^\s{2}-\s+/) && currentKey !== null) {
       const value = line.replace(/^\s{2}-\s+/, '').trim();
@@ -112,7 +112,7 @@ export function levenshtein(a: string, b: string): number {
       );
     }
   }
-  
+
   return dp[m]![n]!;
 }
 
@@ -124,18 +124,18 @@ export function levenshtein(a: string, b: string): number {
  */
 export function findClosestMatch(input: string, candidates: string[]): string | null {
   if (candidates.length === 0) return null;
-  
+
   const inputLower = input.toLowerCase();
   let bestMatch: string | null = null;
   let bestScore = 0;
-  
+
   for (const candidate of candidates) {
     const candidateLower = candidate.toLowerCase();
     let score = 0;
-    
+
     if (candidateLower.startsWith(inputLower)) {
       score = 0.9 + (inputLower.length / candidateLower.length) * 0.1;
-      
+
       const nextChar = candidateLower[inputLower.length];
       if (nextChar && /[-_/.]/.test(nextChar)) {
         score += 0.05;
@@ -151,13 +151,13 @@ export function findClosestMatch(input: string, candidates: string[]): string | 
       const maxLength = Math.max(inputLower.length, candidateLower.length);
       score = 1 - (distance / maxLength);
     }
-    
+
     if (score > bestScore) {
       bestScore = score;
       bestMatch = candidate;
     }
   }
-  
+
   return bestScore >= 0.4 ? bestMatch : null;
 }
 
@@ -227,7 +227,7 @@ export async function getSessionContext(
         }
       }
     }
-  } catch {}
+  } catch { }
 
   return undefined;
 }

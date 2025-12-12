@@ -131,7 +131,6 @@ async function parseSkillFile(
 
   const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!frontmatterMatch?.[1] || !frontmatterMatch[2]) {
-    console.error(`   Skill at ${skillPath} has no valid frontmatter`);
     return null;
   }
 
@@ -142,7 +141,6 @@ async function parseSkillFile(
   try {
     frontmatterObj = parseYamlFrontmatter(frontmatterText);
   } catch {
-    console.error(`   Invalid YAML in ${skillPath}`);
     return null;
   }
 
@@ -150,23 +148,11 @@ async function parseSkillFile(
   try {
     frontmatter = SkillFrontmatterSchema.parse(frontmatterObj);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      console.error(`   Invalid frontmatter in ${skillPath}:`);
-      error.issues.forEach((err) => {
-        console.error(`     - ${err.path.join(".")}: ${err.message}`);
-      });
-    }
     return null;
   }
 
   const skillDir = path.basename(path.dirname(skillPath));
   if (frontmatter.name !== skillDir) {
-    console.error(
-      `   Name mismatch in ${skillPath}:`,
-      `\n     Frontmatter: "${frontmatter.name}"`,
-      `\n     Directory: "${skillDir}"`,
-      `\n     Fix: Rename directory or update frontmatter name field`
-    );
     return null;
   }
 
@@ -325,13 +311,36 @@ export async function listSkillFiles(skillPath: string, maxDepth: number = 3): P
           } else if (stats.isFile() && entry.name !== 'SKILL.md') {
             files.push(newRelPath);
           }
-        } catch {}
+        } catch { }
       }
     } catch { }
   }
 
   await recurse(skillPath, 0, '');
   return files.sort();
+}
+
+/**
+ * Skill summary for preflight evaluation.
+ */
+export interface SkillSummary {
+  name: string;
+  description: string;
+}
+
+/**
+ * Get summaries of all available skills (name + description only).
+ * Used by preflight LLM call to evaluate which skills are relevant.
+ *
+ * @param directory - Project directory to discover skills from
+ * @returns Array of skill summaries
+ */
+export async function getSkillSummaries(directory: string): Promise<SkillSummary[]> {
+  const skillsByName = await discoverAllSkills(directory);
+  return Array.from(skillsByName.values()).map(skill => ({
+    name: skill.name,
+    description: skill.description,
+  }));
 }
 
 /**
