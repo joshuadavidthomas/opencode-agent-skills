@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Changed
+
+- Dynamic skill suggestions now track loaded skills per session and avoid re-suggesting already-loaded skills, reducing redundant prompts and context usage
+
 ## [0.6.0]
 
 ### Added
