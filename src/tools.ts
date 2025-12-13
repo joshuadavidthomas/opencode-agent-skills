@@ -197,7 +197,11 @@ export const RunSkillScript = (directory: string, $: PluginInput["$"]) => {
   });
 };
 
-export const UseSkill = (directory: string, client: OpencodeClient) => {
+export const UseSkill = (
+  directory: string,
+  client: OpencodeClient,
+  onSkillLoaded?: (sessionID: string, skillName: string) => void
+) => {
   return tool({
     description: "Load a skill's SKILL.md content into context. Skills contain proven workflows, techniques, and patterns.",
     args: {
@@ -246,6 +250,8 @@ ${skill.template}
 
       const context = await getSessionContext(client, ctx.sessionID);
       await injectSyntheticContent(client, ctx.sessionID, skillContent, context);
+
+      onSkillLoaded?.(ctx.sessionID, skill.name);
 
       const scriptInfo = skill.scripts.length > 0
         ? `\nAvailable scripts: ${skill.scripts.map(s => s.relativePath).join(', ')}`
