@@ -18,6 +18,8 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+## [0.6.2]
+
 ### Fixed
 
 - Skill validation now allows directory names to differ from the `name` in SKILL.md frontmatter. The frontmatter `name` is the canonical identifier, while directory names are for organization only. This aligns with the Anthropic Agent Skills spec.
@@ -116,7 +118,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
 
-[unreleased]: https://github.com/joshuadavidthomas/opencode-agent-skills/compare/v0.6.1...HEAD
+[unreleased]: https://github.com/joshuadavidthomas/opencode-agent-skills/compare/v0.6.2...HEAD
 [0.1.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.1.0
 [0.2.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.2.0
 [0.3.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.3.0
@@ -128,3 +130,4 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 [0.5.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.5.0
 [0.6.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.6.0
 [0.6.1]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.6.1
+[0.6.2]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.6.2
