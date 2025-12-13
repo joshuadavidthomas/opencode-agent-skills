@@ -1,6 +1,6 @@
 {
   "name": "opencode-agent-skills",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "A dynamic skills plugin for OpenCode that provides tools for loading and using reusable AI agent skills.",
   "author": "Josh Thomas <josh@joshthomas.dev>",
   "license": "MIT",
