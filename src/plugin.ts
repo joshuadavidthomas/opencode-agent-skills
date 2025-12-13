@@ -124,11 +124,14 @@ export const SkillsPlugin: Plugin = async ({ client, $, directory }) => {
 
       const matchedSkills = await matchSkills(userText, skills);
 
-      if (matchedSkills.length === 0) {
+      const loadedSkills = getLoadedSkills(sessionID);
+      const newSkills = matchedSkills.filter(s => !loadedSkills.has(s.name));
+
+      if (newSkills.length === 0) {
         return;
       }
 
-      const injectionText = formatMatchedSkillsInjection(matchedSkills);
+      const injectionText = formatMatchedSkillsInjection(newSkills);
 
       const context: SessionContext = {
         model: output.message.model,
