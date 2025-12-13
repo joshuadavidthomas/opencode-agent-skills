@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Fixed
+
+- Skill validation now allows directory names to differ from the `name` in SKILL.md frontmatter. The frontmatter `name` is the canonical identifier, while directory names are for organization only. This aligns with the Anthropic Agent Skills spec.
+
 ## [0.6.1]
 
 ### Changed

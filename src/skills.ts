@@ -151,11 +151,6 @@ async function parseSkillFile(
     return null;
   }
 
-  const skillDir = path.basename(path.dirname(skillPath));
-  if (frontmatter.name !== skillDir) {
-    return null;
-  }
-
   const skillDirPath = path.dirname(skillPath);
   const scripts = await findScripts(skillDirPath);
 
