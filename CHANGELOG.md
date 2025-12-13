@@ -18,6 +18,8 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+## [0.6.1]
+
 ### Changed
 
 - Dynamic skill suggestions now track loaded skills per session and avoid re-suggesting already-loaded skills, reducing redundant prompts and context usage
@@ -110,7 +112,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
 
-[unreleased]: https://github.com/joshuadavidthomas/opencode-agent-skills/compare/v0.6.0...HEAD
+[unreleased]: https://github.com/joshuadavidthomas/opencode-agent-skills/compare/v0.6.1...HEAD
 [0.1.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.1.0
 [0.2.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.2.0
 [0.3.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.3.0
@@ -121,3 +123,4 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 [0.4.1]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.4.1
 [0.5.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.5.0
 [0.6.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.6.0
+[0.6.1]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.6.1
