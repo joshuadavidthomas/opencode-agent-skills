@@ -23,6 +23,16 @@ import { GetAvailableSkills, ReadSkillFile, RunSkillScript, UseSkill } from "./t
 import { matchSkills, precomputeSkillEmbeddings } from "./embeddings";
 
 const setupCompleteSessions = new Set<string>();
+const loadedSkillsPerSession = new Map<string, Set<string>>();
+
+function getLoadedSkills(sessionID: string): Set<string> {
+  let set = loadedSkillsPerSession.get(sessionID);
+  if (!set) {
+    set = new Set<string>();
+    loadedSkillsPerSession.set(sessionID, set);
+  }
+  return set;
+}
 
 function formatMatchedSkillsInjection(
   matchedSkills: Array<{ name: string; description: string }>
