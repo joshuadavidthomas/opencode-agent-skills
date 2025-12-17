@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Changed
+
+- Improved skill evaluation prompt to hopefully prevent models from announcing "no skill required" style messages to users (who cannot see the hidden evaluation prompt)
+
 ## [0.6.2]
 
 ### Fixed
