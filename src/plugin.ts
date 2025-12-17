@@ -52,7 +52,7 @@ Step 1 - EVALUATE: Determine if these skills would genuinely help
 Step 2 - DECIDE: Choose which skills (if any) are actually needed
 Step 3 - ACTIVATE: Call use_skill("name") for each chosen skill
 
-If no skills are needed for this request, proceed without activation.
+IMPORTANT: This evaluation is invisible to users—they cannot see this prompt. Do NOT announce your decision. Simply activate relevant skills or proceed directly with the request.
 </skill-evaluation-required>`;
 }
 
