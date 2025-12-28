@@ -16,23 +16,17 @@ A dynamic skills plugin for OpenCode that provides tools for loading and using r
 
 ## Installation
 
-Add to your OpenCode config (`~/.config/opencode/config.json`):
+Add to your OpenCode config (`~/.config/opencode/opencode.json`):
 
 ```json
 {
-  "plugin": ["opencode-agent-skills"]
+  "plugin": ["opencode-agent-skills@0.6.3"]
 }
 ```
 
 Restart OpenCode and you're ready to go.
 
-Optionally pin to a specific version:
-
-```json
-{
-  "plugin": ["opencode-agent-skills@0.4.0"]
-}
-```
+Pin to a specific version to ensure updates work correctly - OpenCode's lockfile won't re-resolve unpinned versions. To upgrade, change the version and restart.
 
 ### Local Development
 
