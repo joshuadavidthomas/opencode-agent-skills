@@ -1,6 +1,7 @@
 import type { PluginInput } from "@opencode-ai/plugin";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import YAML from "yaml";
 
 /**
  * Result from finding a file in a directory.
@@ -33,63 +34,25 @@ export async function findFile(
 }
 
 /**
- * Parse simple YAML frontmatter.
- * Handles the subset used by Anthropic Agent Skills Spec:
- * - Simple key: value strings
- * - Arrays (lines starting with "  - ")
- * - Nested objects (indented key: value under a parent key)
+ * Parse YAML frontmatter using the yaml library with safe options.
+ * Uses strict schema to prevent code execution from malicious YAML.
+ * Handles all YAML 1.2 features including multi-line strings (| and >).
  */
 export function parseYamlFrontmatter(text: string): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  const lines = text.split('\n');
-  let currentKey: string | null = null;
-  let currentArray: string[] | null = null;
-  let currentObject: Record<string, string> | null = null;
-
-  for (const line of lines) {
-    if (line.trim() === '') continue;
-
-    if (line.match(/^\s{2}-\s+/) && currentKey !== null) {
-      const value = line.replace(/^\s{2}-\s+/, '').trim();
-      if (currentArray === null) {
-        currentArray = [];
-        result[currentKey] = currentArray;
-      }
-      currentArray.push(value);
-      continue;
-    }
-
-    if (line.match(/^\s{2}\w/) && currentKey !== null) {
-      const nestedMatch = line.match(/^\s{2}(\w[\w-]*)\s*:\s*(.*)$/);
-      if (nestedMatch && nestedMatch[1] && nestedMatch[2] !== undefined) {
-        if (currentObject === null) {
-          currentObject = {};
-          result[currentKey] = currentObject;
-        }
-        currentObject[nestedMatch[1]] = nestedMatch[2].trim();
-        continue;
-      }
-    }
-
-    const topMatch = line.match(/^([\w-]+)\s*:\s*(.*)$/);
-    if (topMatch && topMatch[1] && topMatch[2] !== undefined) {
-      currentArray = null;
-      currentObject = null;
-
-      const key = topMatch[1];
-      const value = topMatch[2].trim();
-      currentKey = key;
-
-      if (value === '') {
-        continue;
-      }
-
-      const unquoted = value.replace(/^["'](.*)["']$/, '$1');
-      result[key] = unquoted;
-    }
+  try {
+    const result = YAML.parse(text, {
+      // Use core schema which only supports basic JSON-compatible types
+      // This prevents custom tags that could execute code
+      schema: "core",
+      // Limit recursion depth to prevent DoS attacks
+      maxAliasCount: 100,
+    });
+    return typeof result === "object" && result !== null
+      ? (result as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
   }
-
-  return result;
 }
 
 /**
