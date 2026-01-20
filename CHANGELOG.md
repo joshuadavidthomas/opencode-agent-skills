@@ -18,6 +18,15 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed YAML frontmatter parsing for skills with multi-line descriptions (block scalar `|` and `>` syntax) by replacing custom parser with the `yaml` library
+- Added support for Claude's plugin v2 format in `installed_plugins.json`, which uses an array of installations per plugin instead of a single object
+
+### Changed
+
+- Claude Code plugin cache discovery now handles the new nested directory structure (`cache/<marketplace>/<plugin>/<version>/skills/`)
+
 ## [0.6.3]
 
 ### Changed
