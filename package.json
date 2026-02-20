@@ -30,6 +30,9 @@
     "yaml": "^2.8.2",
     "zod": "^4.1.13"
   },
+  "overrides": {
+    "onnxruntime-node": "1.20.1"
+  },
   "devDependencies": {
     "@tsconfig/bun": "^1.0.10",
     "@types/bun": "^1.3.3",
