@@ -24,6 +24,8 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [0.6.4]
 
+### Fixed
+
 - Fixed YAML frontmatter parsing for skills with multi-line descriptions (block scalar `|` and `>` syntax) by replacing custom parser with the `yaml` library
 - Added support for Claude's plugin v2 format in `installed_plugins.json`, which uses an array of installations per plugin instead of a single object
 
