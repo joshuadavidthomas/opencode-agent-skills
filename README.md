@@ -85,6 +85,14 @@ Instructions for the AI agent...
 
 See the [Anthropic Agent Skills documentation](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview) for more details.
 
+## Troubleshooting
+
+If Hugging Face downloads are blocked or slow from your network, point Transformers.js at a compatible mirror:
+
+```bash
+HF_ENDPOINT=https://hf-mirror.com opencode
+```
+
 ## Alternatives
 
 - [opencode-skills](https://github.com/malhashemi/opencode-skills) - Auto-discovers skills and registers each as a dynamic `skills_{{name}}` tool

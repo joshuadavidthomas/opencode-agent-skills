@@ -276,8 +276,20 @@ describe("embeddings", () => {
       expect(env.remoteHost).toBe(originalRemoteHost);
     });
 
+    test("trims HF_ENDPOINT before setting env.remoteHost", () => {
+      process.env.HF_ENDPOINT = "  https://hf-mirror.com  ";
+      applyHfEndpoint();
+      expect(env.remoteHost).toBe("https://hf-mirror.com");
+    });
+
     test("does not change env.remoteHost when HF_ENDPOINT is empty string", () => {
       process.env.HF_ENDPOINT = "";
+      applyHfEndpoint();
+      expect(env.remoteHost).toBe(originalRemoteHost);
+    });
+
+    test("does not change env.remoteHost when HF_ENDPOINT is only whitespace", () => {
+      process.env.HF_ENDPOINT = "   ";
       applyHfEndpoint();
       expect(env.remoteHost).toBe(originalRemoteHost);
     });

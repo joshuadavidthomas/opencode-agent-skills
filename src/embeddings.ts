@@ -19,8 +19,9 @@ let modelPromise: Promise<void> | null = null;
  * @see https://github.com/joshuadavidthomas/opencode-agent-skills/issues/36
  */
 export function applyHfEndpoint(): void {
-  if (process.env.HF_ENDPOINT) {
-    env.remoteHost = process.env.HF_ENDPOINT;
+  const hfEndpoint = process.env.HF_ENDPOINT?.trim();
+  if (hfEndpoint) {
+    env.remoteHost = hfEndpoint;
   }
 }
 
