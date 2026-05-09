@@ -18,6 +18,8 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+## [0.7.0]
+
 ### Added
 
 - Added `HF_ENDPOINT` support for configuring a Hugging Face mirror for embedding model downloads ([#38](https://github.com/joshuadavidthomas/opencode-agent-skills/pull/38), thanks [@pablon](https://github.com/pablon)).
@@ -145,7 +147,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
 
-[unreleased]: https://github.com/joshuadavidthomas/opencode-agent-skills/compare/v0.6.5...HEAD
+[unreleased]: https://github.com/joshuadavidthomas/opencode-agent-skills/compare/v0.7.0...HEAD
 [0.1.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.1.0
 [0.2.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.2.0
 [0.3.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.3.0
@@ -161,3 +163,4 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 [0.6.3]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.6.3
 [0.6.4]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.6.4
 [0.6.5]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.6.5
+[0.7.0]: https://github.com/joshuadavidthomas/opencode-agent-skills/releases/tag/v0.7.0

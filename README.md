@@ -35,7 +35,7 @@ Optionally, pin to a specific version for stability:
 
 ```json
 {
-  "plugin": ["opencode-agent-skills@0.6.5"]
+  "plugin": ["opencode-agent-skills@0.7.0"]
 }
 ```
 
