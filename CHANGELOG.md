@@ -20,7 +20,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ### Added
 
-- Added `HF_ENDPOINT` support for configuring a Hugging Face mirror for embedding model downloads.
+- Added `HF_ENDPOINT` support for configuring a Hugging Face mirror for embedding model downloads ([#38](https://github.com/joshuadavidthomas/opencode-agent-skills/pull/38), thanks [@pablon](https://github.com/pablon)).
 
 ## [0.6.5]
 
