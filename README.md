@@ -2,6 +2,9 @@
 
 A dynamic skills plugin for OpenCode that provides tools for loading and using reusable AI agent skills.
 
+> [!NOTE]
+> OpenCode now includes first-party support for agent skills, including native skill discovery and a built-in `skill` tool. For most users, this plugin is no longer necessary. It remains available in maintenance mode for users who depend on its extra behavior, such as automatic semantic skill matching, synthetic context injection, compaction reinjection, Superpowers bootstrapping, and helper tools for reading skill files or running skill scripts.
+
 ## Features
 
 - **Dynamic skill discovery** - Automatically finds skills from project, user, and plugin directories
@@ -15,6 +18,8 @@ A dynamic skills plugin for OpenCode that provides tools for loading and using r
 - [OpenCode](https://opencode.ai/) v1.0.110 or later
 
 ## Installation
+
+If you only need standard skill loading, prefer OpenCode's built-in skills support. Install this plugin only if you need one of its additional behaviors.
 
 Add to your OpenCode config (`~/.config/opencode/opencode.json`):
 
@@ -95,13 +100,15 @@ HF_ENDPOINT=https://hf-mirror.com opencode
 
 ## Alternatives
 
-- [opencode-skills](https://github.com/malhashemi/opencode-skills) - Auto-discovers skills and registers each as a dynamic `skills_{{name}}` tool
+- OpenCode's built-in skills support - Native skill discovery and loading through the built-in `skill` tool
 - [superpowers](https://github.com/obra/superpowers) - A complete software development workflow built on composable skills
 - [skillz](https://github.com/intellectronica/skillz) - An MCP server that exposes skills as tools to any MCP client
 
 ## Contributing
 
-Contributions are welcome! Here's how to set up for development:
+This project is in maintenance mode. Bug fixes and small, clean improvements are welcome, but new features should generally be weighed against OpenCode's native skills support first.
+
+Here's how to set up for development:
 
 ```bash
 git clone https://github.com/joshuadavidthomas/opencode-agent-skills
