@@ -1,5 +1,6 @@
-import { describe, expect, test } from "bun:test";
-import { getEmbedding, cosineSimilarity, matchSkills } from "./embeddings";
+import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { getEmbedding, cosineSimilarity, matchSkills, applyHfEndpoint } from "./embeddings";
+import { env } from "@huggingface/transformers";
 import type { SkillSummary } from "./skills";
 
 describe("embeddings", () => {
@@ -242,6 +243,43 @@ describe("embeddings", () => {
           });
         }
       });
+    });
+  });
+
+  describe("applyHfEndpoint", () => {
+    let originalHfEndpoint: string | undefined;
+    let originalRemoteHost: string;
+
+    beforeEach(() => {
+      originalHfEndpoint = process.env.HF_ENDPOINT;
+      originalRemoteHost = env.remoteHost;
+    });
+
+    afterEach(() => {
+      if (originalHfEndpoint === undefined) {
+        delete process.env.HF_ENDPOINT;
+      } else {
+        process.env.HF_ENDPOINT = originalHfEndpoint;
+      }
+      env.remoteHost = originalRemoteHost;
+    });
+
+    test("sets env.remoteHost when HF_ENDPOINT is defined", () => {
+      process.env.HF_ENDPOINT = "https://hf-mirror.com";
+      applyHfEndpoint();
+      expect(env.remoteHost).toBe("https://hf-mirror.com");
+    });
+
+    test("does not change env.remoteHost when HF_ENDPOINT is undefined", () => {
+      delete process.env.HF_ENDPOINT;
+      applyHfEndpoint();
+      expect(env.remoteHost).toBe(originalRemoteHost);
+    });
+
+    test("does not change env.remoteHost when HF_ENDPOINT is empty string", () => {
+      process.env.HF_ENDPOINT = "";
+      applyHfEndpoint();
+      expect(env.remoteHost).toBe(originalRemoteHost);
     });
   });
 });

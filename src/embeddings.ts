@@ -2,7 +2,7 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { homedir } from "node:os";
-import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
+import { env, pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
 import type { SkillSummary } from "./skills";
 
 const MODEL_NAME = "Xenova/all-MiniLM-L6-v2";
@@ -13,10 +13,22 @@ const TOP_K = 5;
 let model: FeatureExtractionPipeline | null = null;
 let modelPromise: Promise<void> | null = null;
 
+/**
+ * Apply HF_ENDPOINT environment variable to the transformers remote host config.
+ * This allows users in restricted networks to use a mirror instead of huggingface.co.
+ * @see https://github.com/joshuadavidthomas/opencode-agent-skills/issues/36
+ */
+export function applyHfEndpoint(): void {
+  if (process.env.HF_ENDPOINT) {
+    env.remoteHost = process.env.HF_ENDPOINT;
+  }
+}
+
 async function ensureModel(): Promise<void> {
   if (model) return;
   if (!modelPromise) {
     modelPromise = (async () => {
+      applyHfEndpoint();
       model = await pipeline("feature-extraction", MODEL_NAME, { dtype: QUANTIZATION });
     })();
   }
