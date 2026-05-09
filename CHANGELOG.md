@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Added
+
+- Added `HF_ENDPOINT` support for configuring a Hugging Face mirror for embedding model downloads.
+
 ## [0.6.5]
 
 ### Fixed
